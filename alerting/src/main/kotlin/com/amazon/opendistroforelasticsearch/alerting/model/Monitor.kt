@@ -27,12 +27,16 @@ import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeFie
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils.Companion.NO_SCHEMA_VERSION
 import org.elasticsearch.common.CheckedFunction
 import org.elasticsearch.common.ParseField
+import org.elasticsearch.common.io.stream.StreamInput
+import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.xcontent.DeprecationHandler
 import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParser.Token
 import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
+import org.elasticsearch.common.xcontent.json.JsonXContent
 import java.io.IOException
 import java.time.Instant
 
@@ -98,6 +102,20 @@ data class Monitor(
     }
 
     override fun fromDocument(id: String, version: Long): Monitor = copy(id = id, version = version)
+
+    @Throws(IOException::class)
+    fun writeTo(out: StreamOutput) {
+        out.writeString(id)
+        out.writeLong(version)
+        out.writeString(name)
+        out.writeBoolean(enabled)
+        //schedule.writeTo(out)
+        out.writeInstant(lastUpdateTime)
+        out.writeOptionalInstant(enabledTime)
+        out.writeInt(schemaVersion)
+        out.writeMap(uiMetadata)
+    }
+
 
     companion object {
         const val MONITOR_TYPE = "monitor"
@@ -181,6 +199,25 @@ data class Monitor(
                     inputs.toList(),
                     triggers.toList(),
                     uiMetadata)
+        }
+
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): Monitor {
+            return Monitor(
+                    sin.readString(), // id
+                    sin.readLong(), // version
+                    sin.readString(), // name
+                    sin.readBoolean(), // enabled
+                    Schedule.parse(JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY,
+                            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, "")),
+                    sin.readInstant(), // lastUpdateTime
+                    sin.readOptionalInstant(), // enabledTime
+                    sin.readInt(), // schemaVersion
+                    ArrayList(), //inputs fixme
+                    ArrayList(), //triggers fixme
+                    sin.readMap() //uiMetadata
+            )
         }
     }
 }

@@ -247,8 +247,11 @@ class RestIndexMonitorAction(
                         .endObject()
                 return channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, response.toXContent(builder, EMPTY_PARAMS)))
             }
+
+
             val xcp = XContentHelper.createParser(channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                     response.sourceAsBytesRef, XContentType.JSON)
+
             val currentMonitor = ScheduledJob.parse(xcp, monitorId) as Monitor
             // If both are enabled, use the current existing monitor enabled time, otherwise the next execution will be
             // incorrect.
