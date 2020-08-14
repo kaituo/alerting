@@ -31,11 +31,11 @@ class TransportGetMonitorAction @Inject constructor(
 ): HandledTransportAction<GetMonitorRequest, GetMonitorResponse> (
         GetMonitorAction.NAME, transportService, actionFilters, ::GetMonitorRequest) {
 
-    override fun doExecute(task: Task, getRequest: GetMonitorRequest, actionListener: ActionListener<GetMonitorResponse>) {
+    override fun doExecute(task: Task, getMonitorRequest: GetMonitorRequest, actionListener: ActionListener<GetMonitorResponse>) {
 
-        val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX, getRequest.monitorId)
-                .version(getRequest.version)
-                .fetchSourceContext(getRequest.srcContext)
+        val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX, getMonitorRequest.monitorId)
+                .version(getMonitorRequest.version)
+                .fetchSourceContext(getMonitorRequest.srcContext)
 
         client.get(getRequest, object : ActionListener<GetResponse> {
             override fun onResponse(response: GetResponse) {
@@ -43,8 +43,15 @@ class TransportGetMonitorAction @Inject constructor(
                     actionListener.onFailure(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND))
                 }
 
-                actionListener.onResponse(GetMonitorResponse(response.id, response.version,
-                        response.seqNo, response.primaryTerm, RestStatus.OK, response.isSourceEmpty, response.sourceAsBytesRef))
+                var monitor: Monitor? = null
+                if (!response.isSourceEmpty) {
+                    XContentHelper.createParser(getMonitorRequest.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                            response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
+                        monitor = ScheduledJob.parse(xcp, response.id, response.version) as Monitor
+                    }
+                }
+
+                actionListener.onResponse(GetMonitorResponse(response.id, response.version, response.seqNo, response.primaryTerm, RestStatus.OK, monitor))
             }
 
             override fun onFailure(t: Exception) {

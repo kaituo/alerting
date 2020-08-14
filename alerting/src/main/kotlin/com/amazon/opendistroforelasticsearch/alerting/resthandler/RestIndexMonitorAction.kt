@@ -25,6 +25,9 @@ import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH
 import com.amazon.opendistroforelasticsearch.alerting.util._ID
 import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
+import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorAction
+import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorRequest
+import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MAX_ACTION_THROTTLE_VALUE
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_SEQ_NO
@@ -47,6 +50,7 @@ import org.elasticsearch.cluster.service.ClusterService
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
+import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.ToXContent.EMPTY_PARAMS
 import org.elasticsearch.common.xcontent.XContentHelper
 import org.elasticsearch.common.xcontent.XContentParser.Token
@@ -127,11 +131,30 @@ class RestIndexMonitorAction(
         } else {
             WriteRequest.RefreshPolicy.IMMEDIATE
         }
+
+        val indexMonitorRequest = IndexMonitorRequest(id, seqNo, primaryTerm, refreshPolicy, request.method(), monitor, request.xContentRegistry)
+
         return RestChannelConsumer { channel ->
-            IndexMonitorHandler(client, channel, id, seqNo, primaryTerm, refreshPolicy, monitor).start()
+            client.execute(IndexMonitorAction.INSTANCE, indexMonitorRequest, indexMonitorResponse(channel, request.method()))
         }
     }
 
+    private fun indexMonitorResponse(channel: RestChannel, restMethod: RestRequest.Method):
+            RestResponseListener<IndexMonitorResponse> {
+        return object : RestResponseListener<IndexMonitorResponse>(channel) {
+            @Throws(Exception::class)
+            override fun buildResponse(response: IndexMonitorResponse): RestResponse {
+                /*if (response.status == RestStatus.INTERNAL_SERVER_ERROR)
+                    return BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
+                                response.toXContent(channel.newErrorBuilder(), ToXContent.EMPTY_PARAMS))
+                }*/
+                var retStatus = RestStatus.CREATED
+                if (restMethod == RestRequest.Method.PUT)
+                    retStatus = RestStatus.OK
+                return BytesRestResponse(retStatus, response.toXContent(channel.newBuilder(), ToXContent.EMPTY_PARAMS))
+            }
+        }
+    }
     inner class IndexMonitorHandler(
         client: NodeClient,
         channel: RestChannel,

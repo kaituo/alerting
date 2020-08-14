@@ -37,8 +37,6 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
     var primaryTerm: Long
     var status: RestStatus
     var monitor: Monitor?
-    var isSourceEmpty: Boolean
-    var sourceAsBytesRef: BytesReference?
 
     constructor(
             id: String,
@@ -46,9 +44,7 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
             seqNo: Long,
             primaryTerm: Long,
             status: RestStatus,
-            monitor: Monitor?,
-            isSourceEmpty: Boolean,
-            sourceAsBytesRef: BytesReference?
+            monitor: Monitor?
     ) : super() {
         this.id = id
         this.version = version
@@ -56,8 +52,6 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
         this.primaryTerm = primaryTerm
         this.status = status
         this.monitor = monitor
-        this.isSourceEmpty = isSourceEmpty
-        this.sourceAsBytesRef = sourceAsBytesRef
     }
 
     @Throws(IOException::class)
@@ -68,8 +62,6 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
         this.primaryTerm = sin.readLong()
         this.status = sin.readEnum(RestStatus::class.java)
         this.monitor = Monitor.readFrom(sin)
-        this.isSourceEmpty= sin.readBoolean()
-        this.sourceAsBytesRef = sin.readBytesReference()
     }
 
     @Throws(IOException::class)
@@ -80,8 +72,6 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
         out.writeLong(primaryTerm)
         out.writeEnum(status)
         monitor?.writeTo(out)
-        out.writeBoolean(isSourceEmpty)
-        sourceAsBytesRef?.writeTo(out)
     }
 
     @Throws(IOException::class)

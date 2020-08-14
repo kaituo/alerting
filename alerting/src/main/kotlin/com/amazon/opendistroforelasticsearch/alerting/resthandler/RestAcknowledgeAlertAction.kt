@@ -23,6 +23,8 @@ import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.COMPLETE
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.ERROR
 import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH
 import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
+import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertAction
+import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertRequest
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -51,6 +53,7 @@ import org.elasticsearch.rest.RestHandler.Route
 import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.rest.RestRequest.Method.POST
 import org.elasticsearch.rest.RestStatus
+import org.elasticsearch.rest.action.RestToXContentListener
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import java.io.IOException
 import java.time.Instant
@@ -83,10 +86,27 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
         require(alertIds.isNotEmpty()) { "You must provide at least one alert id." }
         val refreshPolicy = RefreshPolicy.parse(request.param(REFRESH, RefreshPolicy.IMMEDIATE.value))
 
+        val acknowledgeAlertRequest = AcknowledgeAlertRequest(monitorId, alertIds, refreshPolicy)
+
+        return RestChannelConsumer { channel ->
+            AcknowledgeHandler(client, channel, monitorId, alertIds, refreshPolicy).start()
+            //client.execute(AcknowledgeAlertAction.INSTANCE, acknowledgeAlertRequest, RestToXContentListener(channel))
+        }
+    }
+
+
+    /*@Throws(IOException::class)
+    override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
+        val monitorId = request.param("monitorID")
+        require(!monitorId.isNullOrEmpty()) { "Missing monitor id." }
+        val alertIds = getAlertIds(request.contentParser())
+        require(alertIds.isNotEmpty()) { "You must provide at least one alert id." }
+        val refreshPolicy = RefreshPolicy.parse(request.param(REFRESH, RefreshPolicy.IMMEDIATE.value))
+
         return RestChannelConsumer { channel ->
             AcknowledgeHandler(client, channel, monitorId, alertIds, refreshPolicy).start()
         }
-    }
+    }*/
 
     inner class AcknowledgeHandler(
         client: NodeClient,

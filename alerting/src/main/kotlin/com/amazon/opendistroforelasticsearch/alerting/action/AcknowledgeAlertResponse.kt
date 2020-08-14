@@ -1,27 +1,12 @@
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
-
 package com.amazon.opendistroforelasticsearch.alerting.action
 
-import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import com.amazon.opendistroforelasticsearch.alerting.model.destination.Destination
 import com.amazon.opendistroforelasticsearch.alerting.util._ID
 import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
 import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.action.ActionResponse
+import org.elasticsearch.action.ActionType
+import org.elasticsearch.action.delete.DeleteResponse
 import org.elasticsearch.common.bytes.BytesReference
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
@@ -31,28 +16,34 @@ import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.rest.RestStatus
 import java.io.IOException
 
-class GetMonitorResponse : ActionResponse, ToXContentObject {
+class AcknowledgeAlertResponse : ActionResponse, ToXContentObject {
     var id: String
     var version: Long
     var seqNo: Long
     var primaryTerm: Long
     var status: RestStatus
-    var monitor: Monitor?
+    //var monitor: Monitor?
+    var isSourceEmpty: Boolean
+    var sourceAsBytesRef: BytesReference?
 
     constructor(
-        id: String,
-        version: Long,
-        seqNo: Long,
-        primaryTerm: Long,
-        status: RestStatus,
-        monitor: Monitor?
+            id: String,
+            version: Long,
+            seqNo: Long,
+            primaryTerm: Long,
+            status: RestStatus,
+            //monitor: Monitor?
+            isSourceEmpty: Boolean,
+            sourceAsBytesRef: BytesReference?
     ) : super() {
         this.id = id
         this.version = version
         this.seqNo = seqNo
         this.primaryTerm = primaryTerm
         this.status = status
-        this.monitor = monitor
+        //this.monitor = monitor
+        this.isSourceEmpty = isSourceEmpty
+        this.sourceAsBytesRef = sourceAsBytesRef
     }
 
     @Throws(IOException::class)
@@ -62,7 +53,9 @@ class GetMonitorResponse : ActionResponse, ToXContentObject {
         this.seqNo = sin.readLong()
         this.primaryTerm = sin.readLong()
         this.status = sin.readEnum(RestStatus::class.java)
-        this.monitor = Monitor.readFrom(sin)
+        //this.monitor = Monitor.readFrom(sin)
+        this.isSourceEmpty= sin.readBoolean()
+        this.sourceAsBytesRef = sin.readBytesReference()
     }
 
     @Throws(IOException::class)
@@ -72,19 +65,19 @@ class GetMonitorResponse : ActionResponse, ToXContentObject {
         out.writeLong(seqNo)
         out.writeLong(primaryTerm)
         out.writeEnum(status)
-        monitor?.writeTo(out)
+        //monitor?.writeTo(out)
+        out.writeBoolean(isSourceEmpty)
+        sourceAsBytesRef?.writeTo(out)
     }
 
     @Throws(IOException::class)
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
-        builder.startObject()
+        return builder.startObject()
                 .field(_ID, id)
                 .field(_VERSION, version)
                 .field(_SEQ_NO, seqNo)
                 .field(_PRIMARY_TERM, primaryTerm)
-        if(monitor != null)
-            builder.field("monitor", monitor)
-
-        return builder.endObject()
+                //.field("monitor", monitor)
+                .endObject()
     }
 }

@@ -41,6 +41,7 @@ import org.elasticsearch.rest.RestResponse
 import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.rest.action.RestActions
 import org.elasticsearch.rest.action.RestResponseListener
+import org.elasticsearch.rest.action.RestToXContentListener
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 
 /**
@@ -70,38 +71,11 @@ class RestGetMonitorAction : BaseRestHandler() {
         if (request.method() == HEAD) {
             srcContext = FetchSourceContext.DO_NOT_FETCH_SOURCE
         }
-        val getMonitorRequest = GetMonitorRequest(monitorId, RestActions.parseVersion(request), srcContext, request.method())
+
+        val getMonitorRequest = GetMonitorRequest(monitorId, RestActions.parseVersion(request), srcContext, request.method(), request.xContentRegistry)
 
         return RestChannelConsumer {
-            channel -> client.execute(GetMonitorAction.INSTANCE, getMonitorRequest, getMonitorResponse(channel))
-        }
-    }
-
-    private fun getMonitorResponse(channel: RestChannel): RestResponseListener<GetMonitorResponse> {
-
-        return object : RestResponseListener<GetMonitorResponse>(channel) {
-
-            @Throws(Exception::class)
-            override fun buildResponse(response: GetMonitorResponse): RestResponse {
-
-                val builder = channel.newBuilder()
-                        .startObject()
-                        .field(_ID, response.id)
-                        .field(_VERSION, response.version)
-                        .field(_SEQ_NO, response.seqNo)
-                        .field(_PRIMARY_TERM, response.primaryTerm)
-
-                //val builder = response.toXContent(channel.newBuilder(), ToXContent.EMPTY_PARAMS)
-                if (!response.isSourceEmpty) {
-                    XContentHelper.createParser(channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
-                            response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
-                        val monitor = ScheduledJob.parse(xcp, response.id, response.version)
-                        builder.field("monitor", monitor)
-                    }
-                }
-                builder.endObject()
-                return BytesRestResponse(RestStatus.OK, builder)
-            }
+            channel -> client.execute(GetMonitorAction.INSTANCE, getMonitorRequest, RestToXContentListener(channel))
         }
     }
 }

@@ -21,6 +21,7 @@ import org.elasticsearch.action.ActionRequestValidationException
 import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.rest.RestRequest
 import java.io.IOException
 
@@ -31,6 +32,7 @@ class IndexMonitorRequest : ActionRequest {
     var refreshPolicy: WriteRequest.RefreshPolicy
     var method: RestRequest.Method
     var monitor: Monitor
+    var xContentRegistry: NamedXContentRegistry? = null
 
     constructor(
         monitorId: String,
@@ -38,7 +40,8 @@ class IndexMonitorRequest : ActionRequest {
         primaryTerm: Long,
         refreshPolicy: WriteRequest.RefreshPolicy,
         method: RestRequest.Method,
-        monitor: Monitor
+        monitor: Monitor,
+        xContentRegistry: NamedXContentRegistry?
     ): super() {
         this.monitorId = monitorId
         this.seqNo = seqNo
@@ -46,6 +49,7 @@ class IndexMonitorRequest : ActionRequest {
         this.refreshPolicy = refreshPolicy
         this.method = method
         this.monitor = monitor
+        this.xContentRegistry = xContentRegistry
     }
 
     @Throws(IOException::class)

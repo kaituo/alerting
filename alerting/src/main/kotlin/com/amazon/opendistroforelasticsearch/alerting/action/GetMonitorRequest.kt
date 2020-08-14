@@ -2,26 +2,33 @@ package com.amazon.opendistroforelasticsearch.alerting.action
 
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionRequestValidationException
-import org.elasticsearch.action.get.GetRequest
-import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 import java.io.IOException
 
 class GetMonitorRequest : ActionRequest {
 
-    var monitorId: String
-    var version: Long
-    var method: RestRequest.Method
-    var srcContext: FetchSourceContext?
+    val monitorId: String
+    val version: Long
+    val method: RestRequest.Method
+    val srcContext: FetchSourceContext?
+    var xContentRegistry: NamedXContentRegistry? = null
 
-    constructor(monitorId: String, version: Long, srcContext: FetchSourceContext?, method: RestRequest.Method) : super() {
+    constructor(
+            monitorId: String,
+            version: Long,
+            srcContext: FetchSourceContext?,
+            method: RestRequest.Method,
+            xContentRegistry: NamedXContentRegistry?
+    ) : super() {
         this.monitorId = monitorId
         this.version = version
         this.srcContext = srcContext
         this.method = method
+        this.xContentRegistry = xContentRegistry
     }
 
     @Throws(IOException::class)

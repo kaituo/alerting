@@ -194,7 +194,7 @@ class TransportIndexMonitorAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     checkShardsFailure(response)
                     actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
-                            response.primaryTerm, RestStatus.CREATED, request.monitor, false, null))
+                            response.primaryTerm, RestStatus.CREATED, request.monitor))
                 }
                 override fun onFailure(t: Exception) {
                     actionListener.onFailure(t)
@@ -220,8 +220,7 @@ class TransportIndexMonitorAction @Inject constructor(
                         ElasticsearchStatusException("Monitor with ${request.monitorId} is not found", RestStatus.NOT_FOUND))
             }
 
-            //channel.request().xContentRegistry // fixme
-            val xcp = XContentHelper.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE,
+            val xcp = XContentHelper.createParser(request.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                     response.sourceAsBytesRef, XContentType.JSON)
             val currentMonitor = ScheduledJob.parse(xcp, request.monitorId) as Monitor
             // If both are enabled, use the current existing monitor enabled time, otherwise the next execution will be
@@ -239,8 +238,8 @@ class TransportIndexMonitorAction @Inject constructor(
             client.index(indexRequest, object : ActionListener<IndexResponse> {
                 override fun onResponse(response: IndexResponse) {
                     checkShardsFailure(response)
-                    //actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
-                      //      response.primaryTerm, RestStatus.CREATED, request.monitor))
+                    actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
+                      response.primaryTerm, RestStatus.CREATED, request.monitor))
                 }
                 override fun onFailure(t: Exception) {
                     actionListener.onFailure(t)
