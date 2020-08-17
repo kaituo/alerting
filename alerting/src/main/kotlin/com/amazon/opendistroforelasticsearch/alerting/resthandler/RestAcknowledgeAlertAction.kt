@@ -86,11 +86,11 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
         require(alertIds.isNotEmpty()) { "You must provide at least one alert id." }
         val refreshPolicy = RefreshPolicy.parse(request.param(REFRESH, RefreshPolicy.IMMEDIATE.value))
 
-        val acknowledgeAlertRequest = AcknowledgeAlertRequest(monitorId, alertIds, refreshPolicy)
+        val acknowledgeAlertRequest = AcknowledgeAlertRequest(monitorId, alertIds, refreshPolicy, request.xContentRegistry)
 
         return RestChannelConsumer { channel ->
-            AcknowledgeHandler(client, channel, monitorId, alertIds, refreshPolicy).start()
-            //client.execute(AcknowledgeAlertAction.INSTANCE, acknowledgeAlertRequest, RestToXContentListener(channel))
+            //AcknowledgeHandler(client, channel, monitorId, alertIds, refreshPolicy).start()
+            client.execute(AcknowledgeAlertAction.INSTANCE, acknowledgeAlertRequest, RestToXContentListener(channel))
         }
     }
 
@@ -108,7 +108,7 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
         }
     }*/
 
-    inner class AcknowledgeHandler(
+    /*inner class AcknowledgeHandler(
         client: NodeClient,
         channel: RestChannel,
         private val monitorId: String,
@@ -181,7 +181,7 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
             channel.sendResponse(BytesRestResponse(RestStatus.OK,
                     responseBuilder(channel.newBuilder(), acknowledged.toList(), failed.toList(), missing.toList())))
         }
-    }
+    }*/
 
     /**
      * Parse the request content and return a list of the alert ids to acknowledge
@@ -207,7 +207,7 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
     /**
      * Build the response containing the acknowledged alerts and the failed to acknowledge alerts.
      */
-    private fun responseBuilder(
+    /*private fun responseBuilder(
         builder: XContentBuilder,
         acknowledgedAlerts: List<Alert>,
         failedAlerts: List<Alert>,
@@ -241,5 +241,5 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
                 .field("failed_reason", "Alert: $alertID does not exist (it may have already completed).")
                 .endObject()
                 .endObject()
-    }
+    }*/
 }

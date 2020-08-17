@@ -1,5 +1,6 @@
 package com.amazon.opendistroforelasticsearch.alerting.action
 
+import com.amazon.opendistroforelasticsearch.alerting.model.Alert
 import com.amazon.opendistroforelasticsearch.alerting.util._ID
 import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
@@ -17,67 +18,64 @@ import org.elasticsearch.rest.RestStatus
 import java.io.IOException
 
 class AcknowledgeAlertResponse : ActionResponse, ToXContentObject {
-    var id: String
-    var version: Long
-    var seqNo: Long
-    var primaryTerm: Long
-    var status: RestStatus
-    //var monitor: Monitor?
-    var isSourceEmpty: Boolean
-    var sourceAsBytesRef: BytesReference?
+
+    val acknowledged: List<Alert>
+    val failed: List<Alert>
+    val missing: List<String>
+
 
     constructor(
-            id: String,
-            version: Long,
-            seqNo: Long,
-            primaryTerm: Long,
-            status: RestStatus,
-            //monitor: Monitor?
-            isSourceEmpty: Boolean,
-            sourceAsBytesRef: BytesReference?
+            acknowledged: List<Alert>,
+            failed: List<Alert>,
+            missing: List<String>
     ) : super() {
-        this.id = id
-        this.version = version
-        this.seqNo = seqNo
-        this.primaryTerm = primaryTerm
-        this.status = status
-        //this.monitor = monitor
-        this.isSourceEmpty = isSourceEmpty
-        this.sourceAsBytesRef = sourceAsBytesRef
+        this.acknowledged = acknowledged
+        this.failed = failed
+        this.missing = missing
     }
 
     @Throws(IOException::class)
     constructor(sin: StreamInput) : super() {
-        this.id = sin.readString()
-        this.version = sin.readLong()
-        this.seqNo = sin.readLong()
-        this.primaryTerm = sin.readLong()
-        this.status = sin.readEnum(RestStatus::class.java)
-        //this.monitor = Monitor.readFrom(sin)
-        this.isSourceEmpty= sin.readBoolean()
-        this.sourceAsBytesRef = sin.readBytesReference()
+        this.acknowledged = mutableListOf()
+        this.failed = mutableListOf()
+        this.missing = mutableListOf()
     }
 
     @Throws(IOException::class)
     override fun writeTo(out: StreamOutput) {
-        out.writeString(id)
-        out.writeLong(version)
-        out.writeLong(seqNo)
-        out.writeLong(primaryTerm)
-        out.writeEnum(status)
-        //monitor?.writeTo(out)
-        out.writeBoolean(isSourceEmpty)
-        sourceAsBytesRef?.writeTo(out)
+
     }
 
     @Throws(IOException::class)
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
-        return builder.startObject()
-                .field(_ID, id)
-                .field(_VERSION, version)
-                .field(_SEQ_NO, seqNo)
-                .field(_PRIMARY_TERM, primaryTerm)
-                //.field("monitor", monitor)
+
+        builder.startObject().startArray("success")
+        acknowledged.forEach { builder.value(it.id) }
+        builder.endArray().startArray("failed")
+        failed.forEach { buildFailedAlertAcknowledgeObject(builder, it) }
+        missing.forEach { buildMissingAlertAcknowledgeObject(builder, it) }
+        return builder.endArray().endObject()
+    }
+
+    private fun buildFailedAlertAcknowledgeObject(builder: XContentBuilder, failedAlert: Alert) {
+        builder.startObject()
+                .startObject(failedAlert.id)
+        val reason = when (failedAlert.state) {
+            Alert.State.ERROR -> "Alert is in an error state and can not be acknowledged."
+            Alert.State.COMPLETED -> "Alert has already completed and can not be acknowledged."
+            Alert.State.ACKNOWLEDGED -> "Alert has already been acknowledged."
+            else -> "Alert state unknown and can not be acknowledged"
+        }
+        builder.field("failed_reason", reason)
+                .endObject()
+                .endObject()
+    }
+
+    private fun buildMissingAlertAcknowledgeObject(builder: XContentBuilder, alertID: String) {
+        builder.startObject()
+                .startObject(alertID)
+                .field("failed_reason", "Alert: $alertID does not exist (it may have already completed).")
+                .endObject()
                 .endObject()
     }
 }

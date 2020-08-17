@@ -8,6 +8,7 @@ import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertIndices
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.AsyncActionHandler
+import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.bulk.BulkRequest
 import org.elasticsearch.action.bulk.BulkResponse
@@ -35,6 +36,8 @@ import org.elasticsearch.tasks.Task
 import org.elasticsearch.transport.TransportService
 import java.time.Instant
 
+private val log = LogManager.getLogger(TransportAcknowledgeAlertAction::class.java)
+
 class TransportAcknowledgeAlertAction @Inject constructor(
     transportService: TransportService,
     val client: Client,
@@ -44,24 +47,14 @@ class TransportAcknowledgeAlertAction @Inject constructor(
 ) {
 
     override fun doExecute(task: Task, request: AcknowledgeAlertRequest, actionListener: ActionListener<AcknowledgeAlertResponse>) {
-        /*client.search(request, object : ActionListener<AcknowledgeAlertResponse> {
-            override fun onResponse(response: AcknowledgeAlertResponse) {
-                actionListener.onResponse(response)
-            }
-
-            override fun onFailure(t: Exception) {
-                actionListener.onFailure(t)
-            }
-        })*/
+        AcknowledgeHandler(client, actionListener, request).start()
     }
 
-/*
+
     inner class AcknowledgeHandler(
             private val client: Client,
-            private val actionListener: ActionListener<IndexMonitorResponse>,
-            private val monitorId: String,
-            private val alertIds: List<String>,
-            private val refreshPolicy: WriteRequest.RefreshPolicy?
+            private val actionListener: ActionListener<AcknowledgeAlertResponse>,
+            private val request: AcknowledgeAlertRequest
     ) {
         val alerts = mutableMapOf<String, Alert>()
 
@@ -69,26 +62,35 @@ class TransportAcknowledgeAlertAction @Inject constructor(
 
         private fun findActiveAlerts() {
             val queryBuilder = QueryBuilders.boolQuery()
-                    .filter(QueryBuilders.termQuery(Alert.MONITOR_ID_FIELD, monitorId))
-                    .filter(QueryBuilders.termsQuery("_id", alertIds))
+                    .filter(QueryBuilders.termQuery(Alert.MONITOR_ID_FIELD, request.monitorId))
+                    .filter(QueryBuilders.termsQuery("_id", request.alertIds))
             val searchRequest = SearchRequest()
                     .indices(AlertIndices.ALERT_INDEX)
-                    .routing(monitorId)
+                    .routing(request.monitorId)
                     .source(SearchSourceBuilder().query(queryBuilder).version(true).seqNoAndPrimaryTerm(true))
 
-            client.search(searchRequest, ActionListener.wrap(::onSearchResponse, ::onFailure))
+            //client.search(searchRequest, ActionListener.wrap(::onSearchResponse, ::onFailure))
+            client.search(searchRequest, object : ActionListener<SearchResponse> {
+                override fun onResponse(response: SearchResponse) {
+                    onSearchResponse(response)
+                }
+
+                override fun onFailure(t: Exception) {
+                    actionListener.onFailure(t)
+                }
+            })
         }
 
         private fun onSearchResponse(response: SearchResponse) {
             val updateRequests = response.hits.flatMap { hit ->
-                val xcp = XContentHelper.createParser(channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                val xcp = XContentHelper.createParser(request.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                         hit.sourceRef, XContentType.JSON)
                 XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
                 val alert = Alert.parse(xcp, hit.id, hit.version)
                 alerts[alert.id] = alert
                 if (alert.state == Alert.State.ACTIVE) {
                     listOf(UpdateRequest(AlertIndices.ALERT_INDEX, hit.id)
-                            .routing(monitorId)
+                            .routing(request.monitorId)
                             .setIfSeqNo(hit.seqNo)
                             .setIfPrimaryTerm(hit.primaryTerm)
                             .doc(XContentFactory.jsonBuilder().startObject()
@@ -100,13 +102,22 @@ class TransportAcknowledgeAlertAction @Inject constructor(
                 }
             }
 
-            com.amazon.opendistroforelasticsearch.alerting.resthandler.log.info("Acknowledging monitor: $monitorId, alerts: ${updateRequests.map { it.id() }}")
-            val request = BulkRequest().add(updateRequests).setRefreshPolicy(refreshPolicy)
-            client.bulk(request, ActionListener.wrap(::onBulkResponse, ::onFailure))
+            log.info("Acknowledging monitor: $request.monitorId, alerts: ${updateRequests.map { it.id() }}")
+            val bulkRequest = BulkRequest().add(updateRequests).setRefreshPolicy(request.refreshPolicy)
+            //client.bulk(request, ActionListener.wrap(::onBulkResponse, ::onFailure))
+            client.bulk(bulkRequest, object : ActionListener<BulkResponse> {
+                override fun onResponse(response: BulkResponse ) {
+                    onBulkResponse(response)
+                }
+
+                override fun onFailure(t: Exception) {
+                    actionListener.onFailure(t)
+                }
+            })
         }
 
         private fun onBulkResponse(response: BulkResponse) {
-            val missing = alertIds.toMutableSet()
+            val missing = request.alertIds.toMutableSet()
             val acknowledged = mutableListOf<Alert>()
             val failed = mutableListOf<Alert>()
             // First handle all alerts that aren't currently ACTIVE. These can't be acknowledged.
@@ -126,9 +137,13 @@ class TransportAcknowledgeAlertAction @Inject constructor(
                 }
             }
 
+/*
             channel.sendResponse(BytesRestResponse(RestStatus.OK,
                     responseBuilder(channel.newBuilder(), acknowledged.toList(), failed.toList(), missing.toList())))
+*/
+
+            actionListener.onResponse(AcknowledgeAlertResponse(acknowledged.toList(), failed.toList(), missing.toList()))
         }
     }
-    */
+
 }

@@ -19,9 +19,12 @@ import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertError
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.ElasticsearchException
+import org.elasticsearch.common.io.stream.StreamInput
+import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.script.ScriptException
+import java.io.IOException
 import java.time.Instant
 
 data class MonitorRunResult(
@@ -57,6 +60,19 @@ data class MonitorRunResult(
 
     fun scriptContextError(trigger: Trigger): Exception? {
         return error ?: inputResults.error ?: triggerResults[trigger.id]?.error
+    }
+
+    companion object {
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): MonitorRunResult {
+            return MonitorRunResult("test", Instant.now(), Instant.now(), null, InputRunResults(), mapOf())
+        }
+    }
+
+    @Throws(IOException::class)
+    fun writeTo(out: StreamOutput) {
+
     }
 }
 

@@ -132,10 +132,15 @@ class RestIndexMonitorAction(
             WriteRequest.RefreshPolicy.IMMEDIATE
         }
 
-        val indexMonitorRequest = IndexMonitorRequest(id, seqNo, primaryTerm, refreshPolicy, request.method(), monitor, request.xContentRegistry)
-
-        return RestChannelConsumer { channel ->
-            client.execute(IndexMonitorAction.INSTANCE, indexMonitorRequest, indexMonitorResponse(channel, request.method()))
+        if(request.method() == POST) {
+            return RestChannelConsumer { channel ->
+                IndexMonitorHandler(client, channel, id, seqNo, primaryTerm, refreshPolicy, monitor).start()
+            }
+        } else {
+            val indexMonitorRequest = IndexMonitorRequest(id, seqNo, primaryTerm, refreshPolicy, request.method(), monitor, request.xContentRegistry)
+            return RestChannelConsumer { channel ->
+                client.execute(IndexMonitorAction.INSTANCE, indexMonitorRequest, indexMonitorResponse(channel, request.method()))
+            }
         }
     }
 
@@ -148,10 +153,16 @@ class RestIndexMonitorAction(
                     return BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
                                 response.toXContent(channel.newErrorBuilder(), ToXContent.EMPTY_PARAMS))
                 }*/
-                var retStatus = RestStatus.CREATED
+                var returnStatus = RestStatus.CREATED
                 if (restMethod == RestRequest.Method.PUT)
-                    retStatus = RestStatus.OK
-                return BytesRestResponse(retStatus, response.toXContent(channel.newBuilder(), ToXContent.EMPTY_PARAMS))
+                    returnStatus = RestStatus.OK
+
+                val restResponse = BytesRestResponse(returnStatus, response.toXContent(channel.newBuilder(), ToXContent.EMPTY_PARAMS))
+                if (returnStatus == RestStatus.CREATED) {
+                    val location = "${AlertingPlugin.MONITOR_BASE_URI}/${response.id}"
+                    restResponse.addHeader("Location", location)
+                }
+                return restResponse
             }
         }
     }
@@ -270,11 +281,8 @@ class RestIndexMonitorAction(
                         .endObject()
                 return channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, response.toXContent(builder, EMPTY_PARAMS)))
             }
-
-
             val xcp = XContentHelper.createParser(channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                     response.sourceAsBytesRef, XContentType.JSON)
-
             val currentMonitor = ScheduledJob.parse(xcp, monitorId) as Monitor
             // If both are enabled, use the current existing monitor enabled time, otherwise the next execution will be
             // incorrect.

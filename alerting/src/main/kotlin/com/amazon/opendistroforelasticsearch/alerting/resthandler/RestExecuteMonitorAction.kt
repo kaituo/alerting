@@ -15,15 +15,17 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.resthandler
 
-import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
-import com.amazon.opendistroforelasticsearch.alerting.MonitorRunner
-import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
+import com.amazon.opendistroforelasticsearch.alerting.MonitorRunner
+import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorAction
+import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorRequest
+import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.ElasticThreadContextElement
-import org.apache.logging.log4j.LogManager
+import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.get.GetRequest
 import org.elasticsearch.action.get.GetResponse
 import org.elasticsearch.client.node.NodeClient
@@ -42,6 +44,7 @@ import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.rest.RestRequest.Method.POST
 import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.rest.action.RestActionListener
+import org.elasticsearch.rest.action.RestToXContentListener
 import java.time.Instant
 
 private val log = LogManager.getLogger(RestExecuteMonitorAction::class.java)
@@ -61,6 +64,29 @@ class RestExecuteMonitorAction(
     }
 
     override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
+        return RestChannelConsumer { channel ->
+            val dryrun = request.paramAsBoolean("dryrun", false)
+            val requestEnd = request.paramAsTime("period_end", TimeValue(Instant.now().toEpochMilli()))
+
+            if (request.hasParam("monitorID")) {
+                //val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX).id(request.param("monitorID"))
+                //client.get(getRequest, processGetResponse(channel, executeMonitor))
+                val monitorId = request.param("monitorID")
+                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, monitorId, null, request.xContentRegistry)
+
+                client.execute(ExecuteMonitorAction.INSTANCE, execMonitorRequest, RestToXContentListener(channel))
+
+            } else {
+                val xcp = request.contentParser()
+                ensureExpectedToken(START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
+                val monitor = Monitor.parse(xcp, Monitor.NO_ID, Monitor.NO_VERSION)
+                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, null, monitor, request.xContentRegistry)
+                client.execute(ExecuteMonitorAction.INSTANCE, execMonitorRequest, RestToXContentListener(channel))
+            }
+        }
+    }
+
+    /*override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
         return RestChannelConsumer { channel ->
             val dryrun = request.paramAsBoolean("dryrun", false)
             val requestEnd = request.paramAsTime("period_end", TimeValue(Instant.now().toEpochMilli()))
@@ -89,10 +115,12 @@ class RestExecuteMonitorAction(
             } else {
                 val xcp = request.contentParser()
                 ensureExpectedToken(START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
-                executeMonitor(Monitor.parse(xcp, Monitor.NO_ID, Monitor.NO_VERSION))
+                val monitor = Monitor.parse(xcp, Monitor.NO_ID, Monitor.NO_VERSION)
+
+                executeMonitor(monitor)
             }
         }
-    }
+    }*/
 
     override fun responseParams(): Set<String> {
         return setOf("dryrun", "period_end", "monitorID")
