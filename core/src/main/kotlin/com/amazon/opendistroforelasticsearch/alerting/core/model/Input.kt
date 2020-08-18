@@ -15,8 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.core.model
 
-import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.io.stream.Writeable
 import org.elasticsearch.common.xcontent.ToXContentObject
 import org.elasticsearch.common.xcontent.XContentParser
@@ -38,8 +36,6 @@ interface Input : Writeable, ToXContentObject {
             return input
         }
     }
-
-
 
     fun name(): String
 }

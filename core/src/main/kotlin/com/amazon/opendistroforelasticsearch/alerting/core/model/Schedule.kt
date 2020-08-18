@@ -118,7 +118,7 @@ sealed class Schedule : Writeable, ToXContentObject {
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): Schedule {
             val type = sin.readEnum(Schedule.TYPE::class.java)
-            if(type == Schedule.TYPE.CRON)
+            if (type == Schedule.TYPE.CRON)
                 return CronSchedule(sin)
             else
                 return IntervalSchedule(sin)

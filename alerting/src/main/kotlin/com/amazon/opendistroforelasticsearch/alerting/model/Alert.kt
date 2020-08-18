@@ -90,9 +90,8 @@ data class Alert(
             sin.readList(::AlertError), // errorHistory
             sin.readString(), // severity
             sin.readList(::ActionExecutionResult) // actionExecutionResults
-    ) {
+    )
 
-    }
     enum class State {
         ACTIVE, ACKNOWLEDGED, COMPLETED, ERROR, DELETED
     }

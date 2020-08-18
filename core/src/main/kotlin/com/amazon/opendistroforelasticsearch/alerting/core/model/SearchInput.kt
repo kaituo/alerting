@@ -35,6 +35,7 @@ data class SearchInput(val indices: List<String>, val query: SearchSourceBuilder
             sin.readStringList(),
             SearchSourceBuilder(sin)
     )
+
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         return builder.startObject()
                 .startObject(SEARCH_FIELD)
@@ -90,9 +91,7 @@ data class SearchInput(val indices: List<String>, val query: SearchSourceBuilder
         @JvmStatic
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): SearchInput {
-            return SearchInput(
-                    sin
-            )
+            return SearchInput(sin)
         }
     }
 }

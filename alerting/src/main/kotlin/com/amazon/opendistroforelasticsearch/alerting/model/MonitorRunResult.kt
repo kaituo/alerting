@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager
 import org.elasticsearch.ElasticsearchException
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.io.stream.Writeable
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.script.ScriptException
@@ -34,7 +35,18 @@ data class MonitorRunResult(
     val error: Exception? = null,
     val inputResults: InputRunResults = InputRunResults(),
     val triggerResults: Map<String, TriggerRunResult> = mapOf()
-) : ToXContent {
+) : Writeable, ToXContent {
+
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+            sin.readString(),
+            sin.readInstant(),
+            sin.readInstant(),
+            sin.readException(),
+            InputRunResults(sin),
+            sin.readMap() as Map<String, TriggerRunResult>
+    )
+
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         return builder.startObject()
                 .field("monitor_name", monitorName)
@@ -66,23 +78,46 @@ data class MonitorRunResult(
         @JvmStatic
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): MonitorRunResult {
-            return MonitorRunResult("test", Instant.now(), Instant.now(), null, InputRunResults(), mapOf())
+            return MonitorRunResult(sin)
         }
     }
 
     @Throws(IOException::class)
-    fun writeTo(out: StreamOutput) {
-
+    override fun writeTo(out: StreamOutput) {
+        out.writeString(monitorName)
+        out.writeInstant(periodStart)
+        out.writeInstant(periodEnd)
+        out.writeException(error)
+        inputResults.writeTo(out)
+        out.writeMap(triggerResults)
     }
 }
 
-data class InputRunResults(val results: List<Map<String, Any>> = listOf(), val error: Exception? = null) : ToXContent {
+data class InputRunResults(val results: List<Map<String, Any>> = listOf(), val error: Exception? = null) : Writeable, ToXContent {
+
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+            //sin.readList(:
+
+    )
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         return builder.startObject()
                 .field("results", results)
                 .field("error", error?.message)
                 .endObject()
+    }
+    @Throws(IOException::class)
+    override fun writeTo(out: StreamOutput) {
+
+    }
+
+    companion object {
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): InputRunResults {
+            return InputRunResults(sin)
+        }
     }
 }
 
@@ -91,7 +126,16 @@ data class TriggerRunResult(
     val triggered: Boolean,
     val error: Exception? = null,
     val actionResults: MutableMap<String, ActionRunResult> = mutableMapOf()
-) : ToXContent {
+) : Writeable, ToXContent {
+
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+        sin.readString(),
+        sin.readBoolean(),
+        sin.readException(),
+        sin.readMap() as MutableMap<String, ActionRunResult>
+    )
+
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         var msg = error?.message
         if (error is ScriptException) msg = error.toJsonString()
@@ -115,16 +159,42 @@ data class TriggerRunResult(
         }
         return null
     }
+
+    @Throws(IOException::class)
+    override fun writeTo(out: StreamOutput) {
+        out.writeString(triggerName)
+        out.writeBoolean(triggered)
+        out.writeException(error)
+        out.writeMap(actionResults as Map<String, ActionRunResult>)
+    }
+
+    companion object {
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): TriggerRunResult {
+            return TriggerRunResult(sin)
+        }
+    }
 }
 
 data class ActionRunResult(
     val actionId: String,
     val actionName: String,
-    val output: Map<String, String>,
+        val output: Map<String, String>,
     val throttled: Boolean = false,
     val executionTime: Instant? = null,
     val error: Exception? = null
-) : ToXContent {
+) : Writeable, ToXContent {
+
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+        sin.readString(),
+        sin.readString(),
+        sin.readMap() as Map<String, String>,
+        sin.readBoolean(),
+        sin.readOptionalInstant(),
+        sin.readException()
+    )
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         return builder.startObject()
@@ -135,6 +205,24 @@ data class ActionRunResult(
                 .optionalTimeField("executionTime", executionTime)
                 .field("error", error?.message)
                 .endObject()
+    }
+
+    @Throws(IOException::class)
+    override fun writeTo(out: StreamOutput) {
+        out.writeString(actionId)
+        out.writeString(actionName)
+        out.writeMap(output)
+        out.writeBoolean(throttled)
+        out.writeOptionalInstant(executionTime)
+        out.writeException(error)
+    }
+
+    companion object {
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): ActionRunResult {
+            return ActionRunResult(sin)
+        }
     }
 }
 

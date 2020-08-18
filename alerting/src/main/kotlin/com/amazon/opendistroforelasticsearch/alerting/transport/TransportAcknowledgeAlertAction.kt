@@ -131,14 +131,11 @@ class TransportAcknowledgeAlertAction @Inject constructor(
                     acknowledged.add(alerts[item.id]!!)
                 }
             }
-
 /*
             channel.sendResponse(BytesRestResponse(RestStatus.OK,
                     responseBuilder(channel.newBuilder(), acknowledged.toList(), failed.toList(), missing.toList())))
 */
-
             actionListener.onResponse(AcknowledgeAlertResponse(acknowledged.toList(), failed.toList(), missing.toList()))
         }
     }
-
 }

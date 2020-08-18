@@ -36,6 +36,14 @@ data class Trigger(
     val id: String = UUIDs.base64UUID()
 ) : Writeable, ToXContent {
 
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+        sin.readString(),
+        sin.readString(),
+        Script(sin),
+        sin.readList(::Action),
+        sin.readString()
+    )
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         builder.startObject()
                 .field(ID_FIELD, id)
@@ -57,7 +65,6 @@ data class Trigger(
 
     @Throws(IOException::class)
     override fun writeTo(out: StreamOutput) {
-
         out.writeString(name)
         out.writeString(severity)
         condition.writeTo(out)
@@ -118,13 +125,7 @@ data class Trigger(
         @JvmStatic
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): Trigger {
-            return Trigger(
-                    sin.readString(),
-                    sin.readString(),
-                    Script(sin),
-                    sin.readList(::Action),
-                    sin.readString()
-            )
+            return Trigger(sin)
         }
     }
 }

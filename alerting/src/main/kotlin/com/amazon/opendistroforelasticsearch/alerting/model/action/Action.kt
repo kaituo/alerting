@@ -26,7 +26,6 @@ import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParserUtils
 import org.elasticsearch.script.Script
 import java.io.IOException
-import java.time.temporal.ChronoUnit
 
 /**
  * This class holds the data and parser logic for Action which is part of a trigger
@@ -50,13 +49,13 @@ data class Action(
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readString(),
-            sin.readString(),
-            sin.readOptionalWriteable(::Script),
-            Script(sin),
-            sin.readBoolean(),
-            sin.readOptionalWriteable(::Throttle),
-            sin.readString()
+        sin.readString(),
+        sin.readString(),
+        sin.readOptionalWriteable(::Script),
+        Script(sin),
+        sin.readBoolean(),
+        sin.readOptionalWriteable(::Throttle),
+        sin.readString()
     )
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
@@ -166,9 +165,7 @@ data class Action(
         @JvmStatic
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): Action {
-            return Action(
-                sin
-            )
+            return Action(sin)
         }
     }
 }

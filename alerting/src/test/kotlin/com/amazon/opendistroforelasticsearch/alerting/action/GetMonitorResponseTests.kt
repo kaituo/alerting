@@ -16,16 +16,10 @@
 package com.amazon.opendistroforelasticsearch.alerting.action
 
 import com.amazon.opendistroforelasticsearch.alerting.core.model.CronSchedule
-import com.amazon.opendistroforelasticsearch.alerting.core.model.Schedule
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.common.xcontent.DeprecationHandler
-import org.elasticsearch.common.xcontent.NamedXContentRegistry
-import org.elasticsearch.common.xcontent.json.JsonXContent
-import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.rest.RestStatus
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 import org.elasticsearch.test.ESTestCase
 import org.junit.Assert
 import java.time.Instant
@@ -69,6 +63,5 @@ class GetMonitorResponseTests : ESTestCase() {
         Assert.assertEquals(1L, newReq.version)
         Assert.assertEquals(RestStatus.OK, newReq.status)
         Assert.assertNotNull(newReq.monitor)
-
     }
 }

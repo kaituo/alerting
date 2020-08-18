@@ -18,8 +18,6 @@ package com.amazon.opendistroforelasticsearch.alerting.action
 import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.rest.RestRequest
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 import org.elasticsearch.test.ESTestCase
 import org.junit.Assert
 
@@ -27,7 +25,7 @@ class AcknowledgeAlertRequestTests : ESTestCase() {
 
     fun `test acknowledge alert request`() {
 
-        val req = AcknowledgeAlertRequest("1234",  mutableListOf("1","2","3","4"), WriteRequest.RefreshPolicy.IMMEDIATE)
+        val req = AcknowledgeAlertRequest("1234", mutableListOf("1", "2", "3", "4"), WriteRequest.RefreshPolicy.IMMEDIATE)
         Assert.assertNotNull(req)
 
         val out = BytesStreamOutput()

@@ -16,29 +16,27 @@
 package com.amazon.opendistroforelasticsearch.alerting.model
 
 import com.amazon.opendistroforelasticsearch.alerting.core.model.CronSchedule
-import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_INPUTS
-import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_TRIGGERS
 import com.amazon.opendistroforelasticsearch.alerting.core.model.Input
 import com.amazon.opendistroforelasticsearch.alerting.core.model.Schedule
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
-import com.amazon.opendistroforelasticsearch.alerting.util._ID
-import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
+import com.amazon.opendistroforelasticsearch.alerting.core.model.SearchInput
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
-import com.amazon.opendistroforelasticsearch.alerting.model.destination.Chime
+import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_INPUTS
+import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_TRIGGERS
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils.Companion.NO_SCHEMA_VERSION
+import com.amazon.opendistroforelasticsearch.alerting.util._ID
+import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.common.CheckedFunction
 import org.elasticsearch.common.ParseField
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
-import org.elasticsearch.common.xcontent.DeprecationHandler
 import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParser.Token
 import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
-import org.elasticsearch.common.xcontent.json.JsonXContent
 import java.io.IOException
 import java.time.Instant
 
@@ -77,6 +75,20 @@ data class Monitor(
         require(triggers.size <= MONITOR_MAX_TRIGGERS) { "Monitors can only support up to $MONITOR_MAX_TRIGGERS triggers." }
     }
 
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+            sin.readString(), // id
+            sin.readLong(), // version
+            sin.readString(), // name
+            sin.readBoolean(), // enabled
+            Schedule.readFrom(sin),
+            sin.readInstant(), // lastUpdateTime
+            sin.readOptionalInstant(), // enabledTime
+            sin.readInt(), // schemaVersion
+            sin.readList(::SearchInput), // inputs
+            sin.readList(::Trigger) , // triggers
+            sin.readMap() // uiMetadata
+    )
     fun toXContent(builder: XContentBuilder): XContentBuilder {
         return toXContent(builder, ToXContent.EMPTY_PARAMS)
     }
@@ -120,9 +132,10 @@ data class Monitor(
         out.writeInstant(lastUpdateTime)
         out.writeOptionalInstant(enabledTime)
         out.writeInt(schemaVersion)
+        out.writeCollection(inputs)
+        out.writeCollection(triggers)
         out.writeMap(uiMetadata)
     }
-
 
     companion object {
         const val MONITOR_TYPE = "monitor"
@@ -212,19 +225,7 @@ data class Monitor(
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): Monitor? {
             return if (sin.readBoolean()) {
-                return Monitor(
-                        sin.readString(), // id
-                        sin.readLong(), // version
-                        sin.readString(), // name
-                        sin.readBoolean(), // enabled
-                        Schedule.readFrom(sin),
-                        sin.readInstant(), // lastUpdateTime
-                        sin.readOptionalInstant(), // enabledTime
-                        sin.readInt(), // schemaVersion
-                        ArrayList(), //inputs fixme
-                        ArrayList(), //triggers fixme
-                        sin.readMap() //uiMetadata
-                )
+                return Monitor(sin)
             } else null
       }
     }

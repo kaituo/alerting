@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.alerting.alerts
 
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.io.stream.Writeable

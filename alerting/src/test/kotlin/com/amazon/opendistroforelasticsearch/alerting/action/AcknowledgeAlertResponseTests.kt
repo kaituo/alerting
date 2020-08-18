@@ -18,12 +18,8 @@ package com.amazon.opendistroforelasticsearch.alerting.action
 import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertError
 import com.amazon.opendistroforelasticsearch.alerting.model.ActionExecutionResult
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert
-import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils
-import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.rest.RestRequest
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 import org.elasticsearch.test.ESTestCase
 import org.junit.Assert
 import java.time.Instant
@@ -33,18 +29,19 @@ class AcknowledgeAlertResponseTests : ESTestCase() {
     fun `test acknowledge alert response`() {
 
         val acknowledged = mutableListOf(
-                Alert("1234", 0L, 1, "monitor-1234", "test-monitor", 0L,
-                        "trigger-14", "test-trigger", Alert.State.ACKNOWLEDGED, Instant.now(), Instant.now(), Instant.now(),
-                        Instant.now(), null, ArrayList(), "sev-2", ArrayList())
+            Alert("1234", 0L, 1, "monitor-1234", "test-monitor", 0L,
+                    "trigger-14", "test-trigger", Alert.State.ACKNOWLEDGED,
+                    Instant.now(), Instant.now(), Instant.now(), Instant.now(), null, ArrayList(),
+                    "sev-2", ArrayList()
+            )
         )
         val failed = mutableListOf(
-                Alert("1234", 0L, 1, "monitor-1234", "test-monitor", 0L,
-                        "trigger-14", "test-trigger", Alert.State.ERROR, Instant.now(), Instant.now(), Instant.now(),
-                        Instant.now(), null, mutableListOf(
-                        AlertError(Instant.now(), "Error msg")
-                ), "sev-2", mutableListOf(ActionExecutionResult("7890",null, 0)))
+            Alert("1234", 0L, 1, "monitor-1234", "test-monitor", 0L,
+                    "trigger-14", "test-trigger", Alert.State.ERROR, Instant.now(), Instant.now(),
+                    Instant.now(), Instant.now(), null, mutableListOf(AlertError(Instant.now(), "Error msg")),
+                    "sev-2", mutableListOf(ActionExecutionResult("7890", null, 0)))
         )
-        val missing = mutableListOf("1","2","3","4")
+        val missing = mutableListOf("1", "2", "3", "4")
 
         val req = AcknowledgeAlertResponse(acknowledged, failed, missing)
         Assert.assertNotNull(req)

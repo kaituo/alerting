@@ -73,7 +73,9 @@ class TransportExecuteMonitorAction @Inject constructor(
                                 .field("message", "Can't find monitor with id: ${response.id}")
                                 .endObject()
                         this.channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, ret))*/
-                        actionListener.onFailure(ElasticsearchStatusException("Can't find monitor with id: ${response.id}", RestStatus.NOT_FOUND))
+                        actionListener.onFailure(
+                            ElasticsearchStatusException("Can't find monitor with id: ${response.id}", RestStatus.NOT_FOUND)
+                        )
                     }
 
                     if (!response.isSourceEmpty) {

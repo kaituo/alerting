@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.model
 
-import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertError
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import org.elasticsearch.common.io.stream.StreamInput
@@ -27,7 +26,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParserUtils
 import java.io.IOException
-import java.lang.IllegalStateException
 import java.time.Instant
 
 /**
