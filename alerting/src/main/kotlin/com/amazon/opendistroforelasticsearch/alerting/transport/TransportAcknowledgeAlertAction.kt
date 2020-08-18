@@ -3,11 +3,9 @@ package com.amazon.opendistroforelasticsearch.alerting.transport
 import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertAction
 import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertResponse
-import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertIndices
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert
-import com.amazon.opendistroforelasticsearch.alerting.resthandler.AsyncActionHandler
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.bulk.BulkRequest
@@ -16,21 +14,17 @@ import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.action.support.ActionFilters
 import org.elasticsearch.action.support.HandledTransportAction
-import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.action.update.UpdateRequest
 import org.elasticsearch.client.Client
-import org.elasticsearch.client.node.NodeClient
 import org.elasticsearch.common.inject.Inject
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
+import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.common.xcontent.XContentFactory
 import org.elasticsearch.common.xcontent.XContentHelper
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParserUtils
 import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.index.query.QueryBuilders
-import org.elasticsearch.rest.BytesRestResponse
-import org.elasticsearch.rest.RestChannel
-import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.tasks.Task
 import org.elasticsearch.transport.TransportService
@@ -41,7 +35,8 @@ private val log = LogManager.getLogger(TransportAcknowledgeAlertAction::class.ja
 class TransportAcknowledgeAlertAction @Inject constructor(
     transportService: TransportService,
     val client: Client,
-    actionFilters: ActionFilters
+    actionFilters: ActionFilters,
+    val xContentRegistry: NamedXContentRegistry
 ) : HandledTransportAction<AcknowledgeAlertRequest, AcknowledgeAlertResponse>(
         AcknowledgeAlertAction.NAME, transportService, actionFilters, ::AcknowledgeAlertRequest
 ) {
@@ -52,9 +47,9 @@ class TransportAcknowledgeAlertAction @Inject constructor(
 
 
     inner class AcknowledgeHandler(
-            private val client: Client,
-            private val actionListener: ActionListener<AcknowledgeAlertResponse>,
-            private val request: AcknowledgeAlertRequest
+        private val client: Client,
+        private val actionListener: ActionListener<AcknowledgeAlertResponse>,
+        private val request: AcknowledgeAlertRequest
     ) {
         val alerts = mutableMapOf<String, Alert>()
 
@@ -83,7 +78,7 @@ class TransportAcknowledgeAlertAction @Inject constructor(
 
         private fun onSearchResponse(response: SearchResponse) {
             val updateRequests = response.hits.flatMap { hit ->
-                val xcp = XContentHelper.createParser(request.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                val xcp = XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                         hit.sourceRef, XContentType.JSON)
                 XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
                 val alert = Alert.parse(xcp, hit.id, hit.version)

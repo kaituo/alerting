@@ -17,30 +17,15 @@ package com.amazon.opendistroforelasticsearch.alerting.resthandler
 import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
 import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorRequest
-import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorResponse
-import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
-import com.amazon.opendistroforelasticsearch.alerting.util._ID
-import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
-import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
-import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import com.amazon.opendistroforelasticsearch.alerting.util.context
 import org.elasticsearch.client.node.NodeClient
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
-import org.elasticsearch.common.xcontent.ToXContent
-import org.elasticsearch.common.xcontent.XContentHelper
-import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.rest.BaseRestHandler
 import org.elasticsearch.rest.BaseRestHandler.RestChannelConsumer
-import org.elasticsearch.rest.BytesRestResponse
-import org.elasticsearch.rest.RestChannel
 import org.elasticsearch.rest.RestHandler.Route
 import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.rest.RestRequest.Method.GET
 import org.elasticsearch.rest.RestRequest.Method.HEAD
-import org.elasticsearch.rest.RestResponse
-import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.rest.action.RestActions
-import org.elasticsearch.rest.action.RestResponseListener
 import org.elasticsearch.rest.action.RestToXContentListener
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 
@@ -72,7 +57,7 @@ class RestGetMonitorAction : BaseRestHandler() {
             srcContext = FetchSourceContext.DO_NOT_FETCH_SOURCE
         }
 
-        val getMonitorRequest = GetMonitorRequest(monitorId, RestActions.parseVersion(request), srcContext, request.method(), request.xContentRegistry)
+        val getMonitorRequest = GetMonitorRequest(monitorId, RestActions.parseVersion(request), request.method(), srcContext)
 
         return RestChannelConsumer {
             channel -> client.execute(GetMonitorAction.INSTANCE, getMonitorRequest, RestToXContentListener(channel))

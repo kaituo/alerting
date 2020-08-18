@@ -16,13 +16,11 @@
 package com.amazon.opendistroforelasticsearch.alerting.action
 
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import com.amazon.opendistroforelasticsearch.alerting.model.destination.Destination
 import com.amazon.opendistroforelasticsearch.alerting.util._ID
 import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
 import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.action.ActionResponse
-import org.elasticsearch.common.bytes.BytesReference
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.xcontent.ToXContent
@@ -72,7 +70,12 @@ class GetMonitorResponse : ActionResponse, ToXContentObject {
         out.writeLong(seqNo)
         out.writeLong(primaryTerm)
         out.writeEnum(status)
-        monitor?.writeTo(out)
+        if (monitor != null) {
+            out.writeBoolean(true)
+            monitor?.writeTo(out)
+        } else {
+            out.writeBoolean(false)
+        }
     }
 
     @Throws(IOException::class)

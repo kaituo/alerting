@@ -32,7 +32,6 @@ class IndexMonitorRequest : ActionRequest {
     var refreshPolicy: WriteRequest.RefreshPolicy
     var method: RestRequest.Method
     var monitor: Monitor
-    var xContentRegistry: NamedXContentRegistry? = null
 
     constructor(
         monitorId: String,
@@ -40,8 +39,7 @@ class IndexMonitorRequest : ActionRequest {
         primaryTerm: Long,
         refreshPolicy: WriteRequest.RefreshPolicy,
         method: RestRequest.Method,
-        monitor: Monitor,
-        xContentRegistry: NamedXContentRegistry?
+        monitor: Monitor
     ): super() {
         this.monitorId = monitorId
         this.seqNo = seqNo
@@ -49,7 +47,6 @@ class IndexMonitorRequest : ActionRequest {
         this.refreshPolicy = refreshPolicy
         this.method = method
         this.monitor = monitor
-        this.xContentRegistry = xContentRegistry
     }
 
     @Throws(IOException::class)
@@ -59,7 +56,7 @@ class IndexMonitorRequest : ActionRequest {
         this.primaryTerm = sin.readLong()
         this.refreshPolicy = WriteRequest.RefreshPolicy.readFrom(sin)
         this.method = sin.readEnum(RestRequest.Method::class.java)
-        this.monitor = Monitor.readFrom(sin)
+        this.monitor = Monitor.readFrom(sin) as Monitor
     }
 
     override fun validate(): ActionRequestValidationException? {

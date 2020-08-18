@@ -20,13 +20,8 @@ import com.amazon.opendistroforelasticsearch.alerting.MonitorRunner
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorRequest
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
-import com.amazon.opendistroforelasticsearch.alerting.elasticapi.ElasticThreadContextElement
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
-import org.elasticsearch.action.get.GetRequest
 import org.elasticsearch.action.get.GetResponse
 import org.elasticsearch.client.node.NodeClient
 import org.elasticsearch.common.settings.Settings
@@ -72,7 +67,7 @@ class RestExecuteMonitorAction(
                 //val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX).id(request.param("monitorID"))
                 //client.get(getRequest, processGetResponse(channel, executeMonitor))
                 val monitorId = request.param("monitorID")
-                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, monitorId, null, request.xContentRegistry)
+                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, monitorId, null)
 
                 client.execute(ExecuteMonitorAction.INSTANCE, execMonitorRequest, RestToXContentListener(channel))
 
@@ -80,7 +75,7 @@ class RestExecuteMonitorAction(
                 val xcp = request.contentParser()
                 ensureExpectedToken(START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
                 val monitor = Monitor.parse(xcp, Monitor.NO_ID, Monitor.NO_VERSION)
-                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, null, monitor, request.xContentRegistry)
+                val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, null, monitor)
                 client.execute(ExecuteMonitorAction.INSTANCE, execMonitorRequest, RestToXContentListener(channel))
             }
         }

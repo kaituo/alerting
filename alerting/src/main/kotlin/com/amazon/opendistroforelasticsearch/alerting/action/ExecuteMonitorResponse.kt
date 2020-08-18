@@ -15,20 +15,13 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.action
 
-import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import com.amazon.opendistroforelasticsearch.alerting.model.MonitorRunResult
-import com.amazon.opendistroforelasticsearch.alerting.util._ID
-import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
-import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
-import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.action.ActionResponse
-import org.elasticsearch.common.bytes.BytesReference
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.ToXContentObject
 import org.elasticsearch.common.xcontent.XContentBuilder
-import org.elasticsearch.rest.RestStatus
 import java.io.IOException
 
 class ExecuteMonitorResponse : ActionResponse, ToXContentObject {

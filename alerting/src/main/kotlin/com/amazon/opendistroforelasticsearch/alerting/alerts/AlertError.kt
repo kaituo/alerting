@@ -17,6 +17,10 @@ package com.amazon.opendistroforelasticsearch.alerting.alerts
 
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
+import com.amazon.opendistroforelasticsearch.alerting.model.Alert
+import org.elasticsearch.common.io.stream.StreamInput
+import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.io.stream.Writeable
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentParser
@@ -24,8 +28,19 @@ import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
 import java.io.IOException
 import java.time.Instant
 
-data class AlertError(val timestamp: Instant, val message: String) : ToXContent {
+data class AlertError(val timestamp: Instant, val message: String) : Writeable, ToXContent {
 
+    @Throws(IOException::class)
+    constructor(sin: StreamInput): this(
+            sin.readInstant(),
+            sin.readString()
+    )
+
+    @Throws(IOException::class)
+    override fun writeTo(out: StreamOutput) {
+        out.writeInstant(timestamp)
+        out.writeString(message)
+    }
     companion object {
 
         const val TIMESTAMP_FIELD = "timestamp"
@@ -49,6 +64,12 @@ data class AlertError(val timestamp: Instant, val message: String) : ToXContent 
                 }
             }
             return AlertError(timestamp = timestamp, message = message)
+        }
+
+        @JvmStatic
+        @Throws(IOException::class)
+        fun readFrom(sin: StreamInput): AlertError {
+            return AlertError(sin)
         }
     }
 

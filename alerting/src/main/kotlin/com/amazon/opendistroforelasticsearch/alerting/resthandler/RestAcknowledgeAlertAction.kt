@@ -15,48 +15,23 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.resthandler
 
-import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertIndices
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.ACKNOWLEDGED
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.ACTIVE
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.COMPLETED
-import com.amazon.opendistroforelasticsearch.alerting.model.Alert.State.ERROR
-import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH
 import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
 import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertAction
 import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertRequest
-import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
+import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import org.elasticsearch.action.ActionListener
-import org.elasticsearch.action.bulk.BulkRequest
-import org.elasticsearch.action.bulk.BulkResponse
-import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.action.search.SearchResponse
-import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy
-import org.elasticsearch.action.update.UpdateRequest
 import org.elasticsearch.client.node.NodeClient
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
-import org.elasticsearch.common.xcontent.XContentBuilder
-import org.elasticsearch.common.xcontent.XContentFactory
-import org.elasticsearch.common.xcontent.XContentHelper
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
-import org.elasticsearch.common.xcontent.XContentType
-import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.rest.BaseRestHandler
 import org.elasticsearch.rest.BaseRestHandler.RestChannelConsumer
-import org.elasticsearch.rest.BytesRestResponse
-import org.elasticsearch.rest.RestChannel
 import org.elasticsearch.rest.RestHandler.Route
 import org.elasticsearch.rest.RestRequest
 import org.elasticsearch.rest.RestRequest.Method.POST
-import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.rest.action.RestToXContentListener
-import org.elasticsearch.search.builder.SearchSourceBuilder
 import java.io.IOException
-import java.time.Instant
 
 private val log: Logger = LogManager.getLogger(RestAcknowledgeAlertAction::class.java)
 
@@ -86,7 +61,7 @@ class RestAcknowledgeAlertAction : BaseRestHandler() {
         require(alertIds.isNotEmpty()) { "You must provide at least one alert id." }
         val refreshPolicy = RefreshPolicy.parse(request.param(REFRESH, RefreshPolicy.IMMEDIATE.value))
 
-        val acknowledgeAlertRequest = AcknowledgeAlertRequest(monitorId, alertIds, refreshPolicy, request.xContentRegistry)
+        val acknowledgeAlertRequest = AcknowledgeAlertRequest(monitorId, alertIds, refreshPolicy)
 
         return RestChannelConsumer { channel ->
             //AcknowledgeHandler(client, channel, monitorId, alertIds, refreshPolicy).start()

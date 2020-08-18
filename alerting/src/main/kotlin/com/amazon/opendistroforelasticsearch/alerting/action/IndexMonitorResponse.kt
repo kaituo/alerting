@@ -21,7 +21,6 @@ import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
 import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.action.ActionResponse
-import org.elasticsearch.common.bytes.BytesReference
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.xcontent.ToXContent
@@ -39,12 +38,12 @@ class IndexMonitorResponse : ActionResponse, ToXContentObject {
     var monitor: Monitor?
 
     constructor(
-            id: String,
-            version: Long,
-            seqNo: Long,
-            primaryTerm: Long,
-            status: RestStatus,
-            monitor: Monitor?
+        id: String,
+        version: Long,
+        seqNo: Long,
+        primaryTerm: Long,
+        status: RestStatus,
+        monitor: Monitor?
     ) : super() {
         this.id = id
         this.version = version

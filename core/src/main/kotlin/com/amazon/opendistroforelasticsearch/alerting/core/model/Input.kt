@@ -15,13 +15,17 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.core.model
 
+import org.elasticsearch.common.io.stream.StreamInput
+import org.elasticsearch.common.io.stream.StreamOutput
+import org.elasticsearch.common.io.stream.Writeable
 import org.elasticsearch.common.xcontent.ToXContentObject
 import org.elasticsearch.common.xcontent.XContentParser
 import org.elasticsearch.common.xcontent.XContentParser.Token
 import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
 import java.io.IOException
 
-interface Input : ToXContentObject {
+interface Input : Writeable, ToXContentObject {
+
     companion object {
 
         @Throws(IOException::class)
@@ -34,6 +38,8 @@ interface Input : ToXContentObject {
             return input
         }
     }
+
+
 
     fun name(): String
 }

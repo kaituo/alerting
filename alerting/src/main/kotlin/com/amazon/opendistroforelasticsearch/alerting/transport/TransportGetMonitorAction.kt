@@ -25,9 +25,10 @@ import org.elasticsearch.transport.TransportService
 private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
 
 class TransportGetMonitorAction @Inject constructor(
-        transportService: TransportService,
-        val client: Client,
-        actionFilters: ActionFilters
+    transportService: TransportService,
+    val client: Client,
+    actionFilters: ActionFilters,
+    val xContentRegistry: NamedXContentRegistry
 ): HandledTransportAction<GetMonitorRequest, GetMonitorResponse> (
         GetMonitorAction.NAME, transportService, actionFilters, ::GetMonitorRequest) {
 
@@ -45,13 +46,15 @@ class TransportGetMonitorAction @Inject constructor(
 
                 var monitor: Monitor? = null
                 if (!response.isSourceEmpty) {
-                    XContentHelper.createParser(getMonitorRequest.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                    XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                             response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
                         monitor = ScheduledJob.parse(xcp, response.id, response.version) as Monitor
                     }
                 }
 
-                actionListener.onResponse(GetMonitorResponse(response.id, response.version, response.seqNo, response.primaryTerm, RestStatus.OK, monitor))
+                actionListener.onResponse(
+                    GetMonitorResponse(response.id, response.version, response.seqNo, response.primaryTerm, RestStatus.OK, monitor)
+                )
             }
 
             override fun onFailure(t: Exception) {

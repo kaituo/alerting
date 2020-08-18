@@ -20,6 +20,7 @@ import org.elasticsearch.action.support.HandledTransportAction
 import org.elasticsearch.client.Client
 import org.elasticsearch.common.inject.Inject
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
+import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.common.xcontent.XContentHelper
 import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.rest.RestStatus
@@ -30,15 +31,15 @@ import java.time.Instant
 private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
 
 class TransportExecuteMonitorAction @Inject constructor(
-        transportService: TransportService,
-        val client: Client,
-        val runner: MonitorRunner,
-        actionFilters: ActionFilters
+    transportService: TransportService,
+    val client: Client,
+    val runner: MonitorRunner,
+    actionFilters: ActionFilters,
+    val xContentRegistry: NamedXContentRegistry
 ): HandledTransportAction<ExecuteMonitorRequest, ExecuteMonitorResponse> (
         ExecuteMonitorAction.NAME, transportService, actionFilters, ::ExecuteMonitorRequest) {
 
     override fun doExecute(task: Task, execMonitorRequest: ExecuteMonitorRequest, actionListener: ActionListener<ExecuteMonitorResponse>) {
-
 
         val executeMonitor = fun(monitor: Monitor) {
             // Launch the coroutine with the clients threadContext. This is needed to preserve authentication information
@@ -76,7 +77,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                     }
 
                     if (!response.isSourceEmpty) {
-                        XContentHelper.createParser(execMonitorRequest.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                        XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                                 response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
                             val monitor = ScheduledJob.parse(xcp, response.id, response.version) as Monitor
                             executeMonitor(monitor)
@@ -88,7 +89,6 @@ class TransportExecuteMonitorAction @Inject constructor(
                     actionListener.onFailure(t)
                 }
             })
-
         } else {
             val monitor = execMonitorRequest.monitor as Monitor
             executeMonitor(monitor)

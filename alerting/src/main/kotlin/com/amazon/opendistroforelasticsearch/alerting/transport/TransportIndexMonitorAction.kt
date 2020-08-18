@@ -47,12 +47,13 @@ import java.time.Duration
 private val log = LogManager.getLogger(TransportIndexMonitorAction::class.java)
 
 class TransportIndexMonitorAction @Inject constructor(
-        transportService: TransportService,
-        val client: Client,
-        actionFilters: ActionFilters,
-        val scheduledJobIndices: ScheduledJobIndices,
-        val clusterService: ClusterService,
-        settings: Settings
+    transportService: TransportService,
+    val client: Client,
+    actionFilters: ActionFilters,
+    val scheduledJobIndices: ScheduledJobIndices,
+    val clusterService: ClusterService,
+    settings: Settings,
+    val xContentRegistry: NamedXContentRegistry
 ) : HandledTransportAction<IndexMonitorRequest, IndexMonitorResponse>(
         IndexMonitorAction.NAME, transportService, actionFilters, ::IndexMonitorRequest
 ) {
@@ -67,9 +68,9 @@ class TransportIndexMonitorAction @Inject constructor(
     }
 
     inner class IndexMonitorHandler(
-            private val client: Client,
-            private val actionListener: ActionListener<IndexMonitorResponse>,
-            private val request: IndexMonitorRequest
+        private val client: Client,
+        private val actionListener: ActionListener<IndexMonitorResponse>,
+        private val request: IndexMonitorRequest
     ) {
 
         fun start() {
@@ -144,7 +145,9 @@ class TransportIndexMonitorAction @Inject constructor(
             val totalHits = response.hits.totalHits?.value
             if (totalHits != null && totalHits >= maxMonitors) {
                 log.error("This request would create more than the allowed monitors [$maxMonitors].")
-                actionListener.onFailure(IllegalArgumentException("This request would create more than the allowed monitors [$maxMonitors]."))
+                actionListener.onFailure(
+                    IllegalArgumentException("This request would create more than the allowed monitors [$maxMonitors].")
+                )
             } else {
                 indexMonitor()
             }
@@ -220,12 +223,14 @@ class TransportIndexMonitorAction @Inject constructor(
                         ElasticsearchStatusException("Monitor with ${request.monitorId} is not found", RestStatus.NOT_FOUND))
             }
 
-            val xcp = XContentHelper.createParser(request.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+            val xcp = XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                     response.sourceAsBytesRef, XContentType.JSON)
             val currentMonitor = ScheduledJob.parse(xcp, request.monitorId) as Monitor
             // If both are enabled, use the current existing monitor enabled time, otherwise the next execution will be
             // incorrect.
-            if (request.monitor.enabled && currentMonitor.enabled) request.monitor = request.monitor.copy(enabledTime = currentMonitor.enabledTime)
+            if (request.monitor.enabled && currentMonitor.enabled)
+                request.monitor = request.monitor.copy(enabledTime = currentMonitor.enabledTime)
+
             request.monitor = request.monitor.copy(schemaVersion = IndexUtils.scheduledJobIndexSchemaVersion)
             val indexRequest = IndexRequest(SCHEDULED_JOBS_INDEX)
                     .setRefreshPolicy(request.refreshPolicy)
@@ -238,8 +243,10 @@ class TransportIndexMonitorAction @Inject constructor(
             client.index(indexRequest, object : ActionListener<IndexResponse> {
                 override fun onResponse(response: IndexResponse) {
                     checkShardsFailure(response)
-                    actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
-                      response.primaryTerm, RestStatus.CREATED, request.monitor))
+                    actionListener.onResponse(
+                        IndexMonitorResponse(response.id, response.version, response.seqNo,
+                                response.primaryTerm, RestStatus.CREATED, request.monitor)
+                    )
                 }
                 override fun onFailure(t: Exception) {
                     actionListener.onFailure(t)

@@ -1,21 +1,14 @@
 package com.amazon.opendistroforelasticsearch.alerting.action
 
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert
-import com.amazon.opendistroforelasticsearch.alerting.util._ID
-import com.amazon.opendistroforelasticsearch.alerting.util._PRIMARY_TERM
-import com.amazon.opendistroforelasticsearch.alerting.util._SEQ_NO
-import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import org.elasticsearch.action.ActionResponse
-import org.elasticsearch.action.ActionType
-import org.elasticsearch.action.delete.DeleteResponse
-import org.elasticsearch.common.bytes.BytesReference
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.ToXContentObject
 import org.elasticsearch.common.xcontent.XContentBuilder
-import org.elasticsearch.rest.RestStatus
 import java.io.IOException
+import java.util.*
 
 class AcknowledgeAlertResponse : ActionResponse, ToXContentObject {
 
@@ -23,11 +16,10 @@ class AcknowledgeAlertResponse : ActionResponse, ToXContentObject {
     val failed: List<Alert>
     val missing: List<String>
 
-
     constructor(
-            acknowledged: List<Alert>,
-            failed: List<Alert>,
-            missing: List<String>
+        acknowledged: List<Alert>,
+        failed: List<Alert>,
+        missing: List<String>
     ) : super() {
         this.acknowledged = acknowledged
         this.failed = failed
@@ -36,14 +28,16 @@ class AcknowledgeAlertResponse : ActionResponse, ToXContentObject {
 
     @Throws(IOException::class)
     constructor(sin: StreamInput) : super() {
-        this.acknowledged = mutableListOf()
-        this.failed = mutableListOf()
-        this.missing = mutableListOf()
+        this.acknowledged = Collections.unmodifiableList(sin.readList(::Alert))
+        this.failed = Collections.unmodifiableList(sin.readList(::Alert))
+        this.missing = sin.readStringList()
     }
 
     @Throws(IOException::class)
     override fun writeTo(out: StreamOutput) {
-
+        out.writeCollection(acknowledged)
+        out.writeCollection(failed)
+        out.writeStringCollection(missing)
     }
 
     @Throws(IOException::class)

@@ -2,8 +2,6 @@ package com.amazon.opendistroforelasticsearch.alerting.action
 
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionRequestValidationException
-import org.elasticsearch.action.ActionType
-import org.elasticsearch.action.delete.DeleteResponse
 import org.elasticsearch.action.support.WriteRequest
 import org.elasticsearch.common.io.stream.StreamInput
 import org.elasticsearch.common.io.stream.StreamOutput
@@ -12,20 +10,17 @@ import java.io.IOException
 
 class AcknowledgeAlertRequest : ActionRequest {
     val monitorId: String
-    val refreshPolicy: WriteRequest.RefreshPolicy
     val alertIds: List<String>
-    var xContentRegistry: NamedXContentRegistry? = null
+    val refreshPolicy: WriteRequest.RefreshPolicy
 
     constructor(
-            monitorId: String,
-            alertIds: List<String>,
-            refreshPolicy: WriteRequest.RefreshPolicy,
-            xContentRegistry: NamedXContentRegistry
+        monitorId: String,
+        alertIds: List<String>,
+        refreshPolicy: WriteRequest.RefreshPolicy
     ) : super() {
         this.monitorId = monitorId
         this.alertIds = alertIds
         this.refreshPolicy = refreshPolicy
-        this.xContentRegistry = xContentRegistry
     }
 
     @Throws(IOException::class)

@@ -10,25 +10,21 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext
 import java.io.IOException
 
 class GetMonitorRequest : ActionRequest {
-
     val monitorId: String
     val version: Long
     val method: RestRequest.Method
     val srcContext: FetchSourceContext?
-    var xContentRegistry: NamedXContentRegistry? = null
 
     constructor(
-            monitorId: String,
-            version: Long,
-            srcContext: FetchSourceContext?,
-            method: RestRequest.Method,
-            xContentRegistry: NamedXContentRegistry?
+        monitorId: String,
+        version: Long,
+        method: RestRequest.Method,
+        srcContext: FetchSourceContext?
     ) : super() {
         this.monitorId = monitorId
         this.version = version
         this.srcContext = srcContext
         this.method = method
-        this.xContentRegistry = xContentRegistry
     }
 
     @Throws(IOException::class)

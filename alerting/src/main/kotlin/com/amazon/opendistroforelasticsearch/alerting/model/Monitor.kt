@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.model
 
+import com.amazon.opendistroforelasticsearch.alerting.core.model.CronSchedule
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_INPUTS
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MONITOR_MAX_TRIGGERS
 import com.amazon.opendistroforelasticsearch.alerting.core.model.Input
@@ -24,6 +25,7 @@ import com.amazon.opendistroforelasticsearch.alerting.util._ID
 import com.amazon.opendistroforelasticsearch.alerting.util._VERSION
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
+import com.amazon.opendistroforelasticsearch.alerting.model.destination.Chime
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils.Companion.NO_SCHEMA_VERSION
 import org.elasticsearch.common.CheckedFunction
 import org.elasticsearch.common.ParseField
@@ -109,7 +111,12 @@ data class Monitor(
         out.writeLong(version)
         out.writeString(name)
         out.writeBoolean(enabled)
-        //schedule.writeTo(out)
+        if(schedule is CronSchedule) {
+            out.writeEnum(Schedule.TYPE.CRON)
+        } else {
+            out.writeEnum(Schedule.TYPE.INTERVAL)
+        }
+        schedule.writeTo(out)
         out.writeInstant(lastUpdateTime)
         out.writeOptionalInstant(enabledTime)
         out.writeInt(schemaVersion)
@@ -203,21 +210,22 @@ data class Monitor(
 
         @JvmStatic
         @Throws(IOException::class)
-        fun readFrom(sin: StreamInput): Monitor {
-            return Monitor(
-                    sin.readString(), // id
-                    sin.readLong(), // version
-                    sin.readString(), // name
-                    sin.readBoolean(), // enabled
-                    Schedule.parse(JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY,
-                            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, "")),
-                    sin.readInstant(), // lastUpdateTime
-                    sin.readOptionalInstant(), // enabledTime
-                    sin.readInt(), // schemaVersion
-                    ArrayList(), //inputs fixme
-                    ArrayList(), //triggers fixme
-                    sin.readMap() //uiMetadata
-            )
-        }
+        fun readFrom(sin: StreamInput): Monitor? {
+            return if (sin.readBoolean()) {
+                return Monitor(
+                        sin.readString(), // id
+                        sin.readLong(), // version
+                        sin.readString(), // name
+                        sin.readBoolean(), // enabled
+                        Schedule.readFrom(sin),
+                        sin.readInstant(), // lastUpdateTime
+                        sin.readOptionalInstant(), // enabledTime
+                        sin.readInt(), // schemaVersion
+                        ArrayList(), //inputs fixme
+                        ArrayList(), //triggers fixme
+                        sin.readMap() //uiMetadata
+                )
+            } else null
+      }
     }
 }
