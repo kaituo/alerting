@@ -77,17 +77,17 @@ data class Monitor(
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readString(), // id
-            sin.readLong(), // version
-            sin.readString(), // name
-            sin.readBoolean(), // enabled
-            Schedule.readFrom(sin),
-            sin.readInstant(), // lastUpdateTime
-            sin.readOptionalInstant(), // enabledTime
-            sin.readInt(), // schemaVersion
-            sin.readList(::SearchInput), // inputs
-            sin.readList(::Trigger) , // triggers
-            sin.readMap() // uiMetadata
+        sin.readString(), // id
+        sin.readLong(), // version
+        sin.readString(), // name
+        sin.readBoolean(), // enabled
+        Schedule.readFrom(sin),
+        sin.readInstant(), // lastUpdateTime
+        sin.readOptionalInstant(), // enabledTime
+        sin.readInt(), // schemaVersion
+        sin.readList(::SearchInput), // inputs
+        sin.readList(::Trigger), // triggers
+        sin.readMap() // uiMetadata
     )
     fun toXContent(builder: XContentBuilder): XContentBuilder {
         return toXContent(builder, ToXContent.EMPTY_PARAMS)
@@ -123,7 +123,7 @@ data class Monitor(
         out.writeLong(version)
         out.writeString(name)
         out.writeBoolean(enabled)
-        if(schedule is CronSchedule) {
+        if (schedule is CronSchedule) {
             out.writeEnum(Schedule.TYPE.CRON)
         } else {
             out.writeEnum(Schedule.TYPE.INTERVAL)
@@ -227,6 +227,6 @@ data class Monitor(
             return if (sin.readBoolean()) {
                 return Monitor(sin)
             } else null
-      }
+        }
     }
 }

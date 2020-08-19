@@ -32,8 +32,8 @@ private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
 
 class TransportExecuteMonitorAction @Inject constructor(
     transportService: TransportService,
-    val client: Client,
-    val runner: MonitorRunner,
+    private val client: Client,
+    private val runner: MonitorRunner,
     actionFilters: ActionFilters,
     val xContentRegistry: NamedXContentRegistry
 ): HandledTransportAction<ExecuteMonitorRequest, ExecuteMonitorResponse> (
@@ -48,15 +48,13 @@ class TransportExecuteMonitorAction @Inject constructor(
                 val (periodStart, periodEnd) =
                         monitor.schedule.getPeriodEndingAt(Instant.ofEpochMilli(execMonitorRequest.requestEnd.millis))
                 try {
-                    val response = runner.runMonitor(monitor, periodStart, periodEnd, execMonitorRequest.dryrun)
+                    val monitorRunResult = runner.runMonitor(monitor, periodStart, periodEnd, execMonitorRequest.dryrun)
                     withContext(Dispatchers.IO) {
-                        //channel.sendResponse(BytesRestResponse(RestStatus.OK, channel.newBuilder().value(response)))
-                        actionListener.onResponse(ExecuteMonitorResponse(response))
+                        actionListener.onResponse(ExecuteMonitorResponse(monitorRunResult))
                     }
                 } catch (e: Exception) {
                     log.error("Unexpected error running monitor", e)
                     withContext(Dispatchers.IO) {
-                        // channel.sendResponse(BytesRestResponse(channel, e))
                         actionListener.onFailure(e)
                     }
                 }
@@ -65,19 +63,13 @@ class TransportExecuteMonitorAction @Inject constructor(
 
         if (execMonitorRequest.monitorId != null) {
             val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX).id(execMonitorRequest.monitorId)
-            //client.get(getRequest, processGetResponse(channel, executeMonitor))
             client.get(getRequest, object : ActionListener<GetResponse> {
                 override fun onResponse(response: GetResponse) {
                     if (!response.isExists) {
-                        /*val ret = this.channel.newErrorBuilder().startObject()
-                                .field("message", "Can't find monitor with id: ${response.id}")
-                                .endObject()
-                        this.channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, ret))*/
                         actionListener.onFailure(
                             ElasticsearchStatusException("Can't find monitor with id: ${response.id}", RestStatus.NOT_FOUND)
                         )
                     }
-
                     if (!response.isSourceEmpty) {
                         XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
                                 response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
@@ -96,27 +88,4 @@ class TransportExecuteMonitorAction @Inject constructor(
             executeMonitor(monitor)
         }
     }
-
-    /*private fun processGetResponse( block: (Monitor) -> Unit): RestActionListener<GetResponse> {
-        return object : RestActionListener<GetResponse>(channel) {
-
-            override fun processResponse(response: GetResponse) {
-                if (!response.isExists) {
-                    val ret = this.channel.newErrorBuilder().startObject()
-                            .field("message", "Can't find monitor with id: ${response.id}")
-                            .endObject()
-                    this.channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, ret))
-                }
-
-                val xcp = (this.channel.request().xContentType ?: XContentType.JSON).xContent()
-                        .createParser(this.channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
-                                response.sourceAsBytesRef.streamInput())
-                val monitor = xcp.use {
-                    ScheduledJob.parse(xcp, response.id, response.version) as Monitor
-                }
-
-                block(monitor)
-            }
-        }
-    }*/
 }

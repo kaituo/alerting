@@ -23,7 +23,6 @@ import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
 import java.io.IOException
 
 interface Input : Writeable, ToXContentObject {
-
     companion object {
 
         @Throws(IOException::class)

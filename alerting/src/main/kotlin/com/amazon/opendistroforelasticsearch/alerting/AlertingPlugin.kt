@@ -123,7 +123,7 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
                 RestDeleteMonitorAction(),
                 RestIndexMonitorAction(settings, scheduledJobIndices, clusterService),
                 RestSearchMonitorAction(),
-                RestExecuteMonitorAction(settings, runner),
+                RestExecuteMonitorAction(),
                 RestAcknowledgeAlertAction(),
                 RestScheduledJobStatsHandler("_alerting"),
                 RestIndexDestinationAction(settings, scheduledJobIndices, clusterService),

@@ -132,16 +132,16 @@ class RestIndexMonitorAction(
             WriteRequest.RefreshPolicy.IMMEDIATE
         }
 
-        if(request.method() == POST) {
+        /*if(request.method() == POST) {
             return RestChannelConsumer { channel ->
                 IndexMonitorHandler(client, channel, id, seqNo, primaryTerm, refreshPolicy, monitor).start()
             }
-        } else {
+        } else {*/
             val indexMonitorRequest = IndexMonitorRequest(id, seqNo, primaryTerm, refreshPolicy, request.method(), monitor)
             return RestChannelConsumer { channel ->
                 client.execute(IndexMonitorAction.INSTANCE, indexMonitorRequest, indexMonitorResponse(channel, request.method()))
             }
-        }
+        //}
     }
 
     private fun indexMonitorResponse(channel: RestChannel, restMethod: RestRequest.Method):

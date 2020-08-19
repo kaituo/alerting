@@ -28,7 +28,6 @@ import com.amazon.opendistroforelasticsearch.alerting.randomTrigger
 import com.amazon.opendistroforelasticsearch.alerting.randomTriggerRunResult
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.test.ESTestCase
 
@@ -120,7 +119,7 @@ class WriteableTests : ESTestCase() {
         val out = BytesStreamOutput()
         runResult.writeTo(out)
         val sin = StreamInput.wrap(out.bytes().toBytesRef().bytes)
-        val newRunResult = InputRunResults(sin)
+        val newRunResult = InputRunResults.readFrom(sin)
         assertEquals("Round tripping InputRunResults doesn't work", runResult, newRunResult)
     }
 

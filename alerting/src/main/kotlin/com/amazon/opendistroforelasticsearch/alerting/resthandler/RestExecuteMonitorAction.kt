@@ -44,10 +44,7 @@ import java.time.Instant
 
 private val log = LogManager.getLogger(RestExecuteMonitorAction::class.java)
 
-class RestExecuteMonitorAction(
-    val settings: Settings,
-    private val runner: MonitorRunner
-) : BaseRestHandler() {
+class RestExecuteMonitorAction: BaseRestHandler() {
 
     override fun getName(): String = "execute_monitor_action"
 
@@ -64,13 +61,9 @@ class RestExecuteMonitorAction(
             val requestEnd = request.paramAsTime("period_end", TimeValue(Instant.now().toEpochMilli()))
 
             if (request.hasParam("monitorID")) {
-                //val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX).id(request.param("monitorID"))
-                //client.get(getRequest, processGetResponse(channel, executeMonitor))
                 val monitorId = request.param("monitorID")
                 val execMonitorRequest = ExecuteMonitorRequest(dryrun, requestEnd, monitorId, null)
-
                 client.execute(ExecuteMonitorAction.INSTANCE, execMonitorRequest, RestToXContentListener(channel))
-
             } else {
                 val xcp = request.contentParser()
                 ensureExpectedToken(START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
@@ -81,66 +74,7 @@ class RestExecuteMonitorAction(
         }
     }
 
-    /*override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
-        return RestChannelConsumer { channel ->
-            val dryrun = request.paramAsBoolean("dryrun", false)
-            val requestEnd = request.paramAsTime("period_end", TimeValue(Instant.now().toEpochMilli()))
-
-            val executeMonitor = fun(monitor: Monitor) {
-                // Launch the coroutine with the clients threadContext. This is needed to preserve authentication information
-                // stored on the threadContext set by the security plugin when using the Alerting plugin with the Security plugin.
-                runner.launch(ElasticThreadContextElement(client.threadPool().threadContext)) {
-                    val (periodStart, periodEnd) =
-                            monitor.schedule.getPeriodEndingAt(Instant.ofEpochMilli(requestEnd.millis))
-                    try {
-                        val response = runner.runMonitor(monitor, periodStart, periodEnd, dryrun)
-                        withContext(Dispatchers.IO) {
-                            channel.sendResponse(BytesRestResponse(RestStatus.OK, channel.newBuilder().value(response)))
-                        }
-                    } catch (e: Exception) {
-                        log.error("Unexpected error running monitor", e)
-                        withContext(Dispatchers.IO) { channel.sendResponse(BytesRestResponse(channel, e)) }
-                    }
-                }
-            }
-
-            if (request.hasParam("monitorID")) {
-                val getRequest = GetRequest(ScheduledJob.SCHEDULED_JOBS_INDEX).id(request.param("monitorID"))
-                client.get(getRequest, processGetResponse(channel, executeMonitor))
-            } else {
-                val xcp = request.contentParser()
-                ensureExpectedToken(START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
-                val monitor = Monitor.parse(xcp, Monitor.NO_ID, Monitor.NO_VERSION)
-
-                executeMonitor(monitor)
-            }
-        }
-    }*/
-
     override fun responseParams(): Set<String> {
         return setOf("dryrun", "period_end", "monitorID")
-    }
-
-    private fun processGetResponse(channel: RestChannel, block: (Monitor) -> Unit): RestActionListener<GetResponse> {
-        return object : RestActionListener<GetResponse>(channel) {
-
-            override fun processResponse(response: GetResponse) {
-                if (!response.isExists) {
-                    val ret = this.channel.newErrorBuilder().startObject()
-                            .field("message", "Can't find monitor with id: ${response.id}")
-                            .endObject()
-                    this.channel.sendResponse(BytesRestResponse(RestStatus.NOT_FOUND, ret))
-                }
-
-                val xcp = (this.channel.request().xContentType ?: XContentType.JSON).xContent()
-                        .createParser(this.channel.request().xContentRegistry, LoggingDeprecationHandler.INSTANCE,
-                                response.sourceAsBytesRef.streamInput())
-                val monitor = xcp.use {
-                    ScheduledJob.parse(xcp, response.id, response.version) as Monitor
-                }
-
-                block(monitor)
-            }
-        }
     }
 }

@@ -12,14 +12,15 @@
  *   express or implied. See the License for the specific language governing
  *   permissions and limitations under the License.
  */
-
 package com.amazon.opendistroforelasticsearch.alerting.action
 
-import org.elasticsearch.action.ActionType
+import org.elasticsearch.test.ESTestCase
+import org.junit.Assert
 
-class GetMonitorAction private constructor() : ActionType<GetMonitorResponse>(NAME, ::GetMonitorResponse) {
-    companion object {
-        val INSTANCE = GetMonitorAction()
-        val NAME = "cluster:admin/alerting/monitor/get"
+class GetMonitorActionTests : ESTestCase() {
+
+    fun `test get monitor action name`() {
+        Assert.assertNotNull(GetMonitorAction.INSTANCE.name())
+        Assert.assertEquals(GetMonitorAction.INSTANCE.name(), GetMonitorAction.NAME)
     }
 }

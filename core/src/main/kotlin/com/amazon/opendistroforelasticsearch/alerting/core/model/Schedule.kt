@@ -38,7 +38,6 @@ import java.time.zone.ZoneRulesException
 
 sealed class Schedule : Writeable, ToXContentObject {
     enum class TYPE { CRON, INTERVAL }
-
     companion object {
         const val CRON_FIELD = "cron"
         const val EXPRESSION_FIELD = "expression"
@@ -171,8 +170,8 @@ data class CronSchedule(
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readString(),
-            sin.readZoneId()
+        sin.readString(),
+        sin.readZoneId()
     )
 
     companion object {
@@ -276,8 +275,8 @@ data class IntervalSchedule(
 ) : Schedule() {
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readInt(),
-            sin.readEnum(ChronoUnit::class.java)
+        sin.readInt(),
+        sin.readEnum(ChronoUnit::class.java)
     )
     companion object {
         @Transient

@@ -39,12 +39,12 @@ data class MonitorRunResult(
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readString(),
-            sin.readInstant(),
-            sin.readInstant(),
-            sin.readException(),
-            InputRunResults(sin),
-            sin.readMap() as Map<String, TriggerRunResult>
+        sin.readString(),
+        sin.readInstant(),
+        sin.readInstant(),
+        sin.readException(),
+        InputRunResults.readFrom(sin),
+        sin.readMap() as Map<String, TriggerRunResult>
     )
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
@@ -95,12 +95,6 @@ data class MonitorRunResult(
 
 data class InputRunResults(val results: List<Map<String, Any>> = listOf(), val error: Exception? = null) : Writeable, ToXContent {
 
-    @Throws(IOException::class)
-    constructor(sin: StreamInput): this(
-            //sin.readList(:
-
-    )
-
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
         return builder.startObject()
                 .field("results", results)
@@ -109,14 +103,24 @@ data class InputRunResults(val results: List<Map<String, Any>> = listOf(), val e
     }
     @Throws(IOException::class)
     override fun writeTo(out: StreamOutput) {
-
+        out.writeVInt(results.size)
+        for (map in results) {
+            out.writeMap(map)
+        }
+        out.writeException(error)
     }
 
     companion object {
         @JvmStatic
         @Throws(IOException::class)
         fun readFrom(sin: StreamInput): InputRunResults {
-            return InputRunResults(sin)
+            val count = sin.readVInt()
+            val list = mutableListOf<Map<String, Any>>()
+            for (i in 0 until count) {
+                list.add(sin.readMap())
+            }
+            val error = sin.readException<Exception>()
+            return InputRunResults(list, error)
         }
     }
 }
@@ -180,7 +184,7 @@ data class TriggerRunResult(
 data class ActionRunResult(
     val actionId: String,
     val actionName: String,
-        val output: Map<String, String>,
+    val output: Map<String, String>,
     val throttled: Boolean = false,
     val executionTime: Instant? = null,
     val error: Exception? = null
