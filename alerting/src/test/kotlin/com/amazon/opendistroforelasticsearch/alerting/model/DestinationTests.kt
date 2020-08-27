@@ -81,7 +81,7 @@ class DestinationTests : ESTestCase() {
     }
 
     fun `test chime destination create using stream`() {
-        val chimeDest = Destination("1234", 0L, 1, DestinationType.CHIME, "TestChimeDest",
+        val chimeDest = Destination("1234", 0L, 1, DestinationType.CHIME, "TestChimeDest", "joe", "role_1,role_2",
                 Instant.now(), Chime("test.com"), null, null)
 
         val out = BytesStreamOutput()
@@ -102,8 +102,8 @@ class DestinationTests : ESTestCase() {
     }
 
     fun `test slack destination create using stream`() {
-        val chimeDest = Destination("2345", 1L, 2, DestinationType.SLACK, "TestSlackDest",
-                Instant.now(), null, Slack("mytest.com"), null)
+        val chimeDest = Destination("2345", 1L, 2, DestinationType.SLACK, "TestSlackDest", "joe",
+                "role_1,role_2", Instant.now(), null, Slack("mytest.com"), null)
 
         val out = BytesStreamOutput()
         chimeDest.writeTo(out)
@@ -129,6 +129,8 @@ class DestinationTests : ESTestCase() {
                 2,
                 DestinationType.SLACK,
                 "TestSlackDest",
+                "joe",
+                "role_1,role_2",
                 Instant.now(),
                 null,
                 null,
@@ -168,6 +170,8 @@ class DestinationTests : ESTestCase() {
                 2,
                 DestinationType.SLACK,
                 "TestSlackDest",
+                "joe",
+                "role_1,role_2",
                 Instant.now(),
                 null,
                 null,

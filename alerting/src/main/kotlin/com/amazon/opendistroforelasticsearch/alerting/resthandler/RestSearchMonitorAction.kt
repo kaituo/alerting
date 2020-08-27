@@ -20,6 +20,7 @@ import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob.Companion.SCHEDULED_JOBS_INDEX
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import com.amazon.opendistroforelasticsearch.alerting.util.context
+import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.client.node.NodeClient
@@ -43,6 +44,8 @@ import org.elasticsearch.rest.action.RestResponseListener
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import java.io.IOException
 
+private val log = LogManager.getLogger(RestSearchMonitorAction::class.java)
+
 /**
  * Rest handlers to search for monitors.
  */
@@ -62,6 +65,8 @@ class RestSearchMonitorAction : BaseRestHandler() {
 
     @Throws(IOException::class)
     override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
+        log.debug("${request.method()} ${AlertingPlugin.MONITOR_BASE_URI}/_search")
+
         val searchSourceBuilder = SearchSourceBuilder()
         searchSourceBuilder.parseXContent(request.contentOrSourceParamParser())
         searchSourceBuilder.fetchSource(context(request))

@@ -51,9 +51,11 @@ import com.amazon.opendistroforelasticsearch.alerting.transport.TransportExecute
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportGetMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportIndexMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportSearchMonitorAction
+import com.amazon.opendistroforelasticsearch.commons.rest.SecureRestClientBuilder
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionResponse
 import org.elasticsearch.client.Client
+import org.elasticsearch.client.RestClient
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver
 import org.elasticsearch.cluster.node.DiscoveryNodes
 import org.elasticsearch.cluster.service.ClusterService
@@ -109,6 +111,7 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
     lateinit var threadPool: ThreadPool
     lateinit var alertIndices: AlertIndices
     lateinit var clusterService: ClusterService
+    lateinit var restClient: RestClient
 
     override fun getRestHandlers(
         settings: Settings,
@@ -121,12 +124,12 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
     ): List<RestHandler> {
         return listOf(RestGetMonitorAction(),
                 RestDeleteMonitorAction(),
-                RestIndexMonitorAction(),
+                RestIndexMonitorAction(settings, restClient),
                 RestSearchMonitorAction(),
                 RestExecuteMonitorAction(),
                 RestAcknowledgeAlertAction(),
                 RestScheduledJobStatsHandler("_alerting"),
-                RestIndexDestinationAction(settings),
+                RestIndexDestinationAction(settings, restClient),
                 RestDeleteDestinationAction())
     }
 
@@ -170,6 +173,7 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
         sweeper = JobSweeper(environment.settings(), client, clusterService, threadPool, xContentRegistry, scheduler, ALERTING_JOB_TYPES)
         this.threadPool = threadPool
         this.clusterService = clusterService
+        this.restClient = SecureRestClientBuilder(settings).build()
         return listOf(sweeper, scheduler, runner, scheduledJobIndices)
     }
 

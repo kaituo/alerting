@@ -54,28 +54,39 @@ class TransportGetMonitorAction @Inject constructor(
                 .version(getMonitorRequest.version)
                 .fetchSourceContext(getMonitorRequest.srcContext)
 
-        client.get(getRequest, object : ActionListener<GetResponse> {
-            override fun onResponse(response: GetResponse) {
-                if (!response.isExists) {
-                    actionListener.onFailure(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND))
-                }
-
-                var monitor: Monitor? = null
-                if (!response.isSourceEmpty) {
-                    XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
-                            response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
-                        monitor = ScheduledJob.parse(xcp, response.id, response.version) as Monitor
+        /*
+         * Remove security context before you call elasticsearch api's. By this time, permissions required
+         * to call this api are validated.
+         * Once system-indices [https://github.com/opendistro-for-elasticsearch/security/issues/666] is done, we
+         * might further improve this logic. Also change try to kotlin-use for auto-closable.
+         */
+        val ctx = client.threadPool().threadContext.stashContext()
+        try {
+            client.get(getRequest, object : ActionListener<GetResponse> {
+                override fun onResponse(response: GetResponse) {
+                    if (!response.isExists) {
+                        actionListener.onFailure(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND))
                     }
+
+                    var monitor: Monitor? = null
+                    if (!response.isSourceEmpty) {
+                        XContentHelper.createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE,
+                                response.sourceAsBytesRef, XContentType.JSON).use { xcp ->
+                            monitor = ScheduledJob.parse(xcp, response.id, response.version) as Monitor
+                        }
+                    }
+
+                    actionListener.onResponse(
+                            GetMonitorResponse(response.id, response.version, response.seqNo, response.primaryTerm, RestStatus.OK, monitor)
+                    )
                 }
 
-                actionListener.onResponse(
-                    GetMonitorResponse(response.id, response.version, response.seqNo, response.primaryTerm, RestStatus.OK, monitor)
-                )
-            }
-
-            override fun onFailure(t: Exception) {
-                actionListener.onFailure(t)
-            }
-        })
+                override fun onFailure(t: Exception) {
+                    actionListener.onFailure(t)
+                }
+            })
+        } finally {
+            ctx.close()
+        }
     }
 }

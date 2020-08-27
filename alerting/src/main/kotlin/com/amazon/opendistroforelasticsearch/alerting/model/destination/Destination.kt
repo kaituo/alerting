@@ -46,6 +46,8 @@ data class Destination(
     val schemaVersion: Int = NO_SCHEMA_VERSION,
     val type: DestinationType,
     val name: String,
+    val user: String,
+    val associatedRoles: String,
     val lastUpdateTime: Instant,
     val chime: Chime?,
     val slack: Slack?,
@@ -57,6 +59,8 @@ data class Destination(
         if (params.paramAsBoolean("with_type", false)) builder.startObject(DESTINATION)
         builder.field(TYPE_FIELD, type.value)
                 .field(NAME_FIELD, name)
+                .field(USER_FIELD, user)
+                .field(ASSOCIATED_ROLES_FIELD, associatedRoles)
                 .field(SCHEMA_VERSION, schemaVersion)
                 .optionalTimeField(LAST_UPDATE_TIME_FIELD, lastUpdateTime)
                 .field(type.value, constructResponseForDestinationType(type))
@@ -75,6 +79,8 @@ data class Destination(
         out.writeInt(schemaVersion)
         out.writeEnum(type)
         out.writeString(name)
+        out.writeString(user)
+        out.writeString(associatedRoles)
         out.writeInstant(lastUpdateTime)
         if (chime != null) {
             out.writeBoolean(true)
@@ -100,6 +106,8 @@ data class Destination(
         const val DESTINATION = "destination"
         const val TYPE_FIELD = "type"
         const val NAME_FIELD = "name"
+        const val USER_FIELD = "user"
+        const val ASSOCIATED_ROLES_FIELD = "associated_roles"
         const val NO_ID = ""
         const val NO_VERSION = 1L
         const val SCHEMA_VERSION = "schema_version"
@@ -117,6 +125,8 @@ data class Destination(
         @Throws(IOException::class)
         fun parse(xcp: XContentParser, id: String = NO_ID, version: Long = NO_VERSION): Destination {
             lateinit var name: String
+            var user: String = ""
+            var associatedRoles = ""
             lateinit var type: String
             var slack: Slack? = null
             var chime: Chime? = null
@@ -131,6 +141,8 @@ data class Destination(
 
                 when (fieldName) {
                     NAME_FIELD -> name = xcp.text()
+                    USER_FIELD -> user = xcp.text()
+                    ASSOCIATED_ROLES_FIELD -> associatedRoles = xcp.text()
                     TYPE_FIELD -> {
                         type = xcp.text()
                         val allowedTypes = DestinationType.values().map { it.value }
@@ -164,6 +176,8 @@ data class Destination(
                     schemaVersion,
                     DestinationType.valueOf(type.toUpperCase(Locale.ROOT)),
                     requireNotNull(name) { "Destination name is null" },
+                    user,
+                    associatedRoles,
                     lastUpdateTime ?: Instant.now(),
                     chime,
                     slack,
@@ -179,6 +193,8 @@ data class Destination(
                 sin.readInt(), // schemaVersion
                 sin.readEnum(DestinationType::class.java), // type
                 sin.readString(), // name
+                sin.readString(), // user
+                sin.readString(), // associatedRoles
                 sin.readInstant(), // lastUpdateTime
                 Chime.readFrom(sin), // chime
                 Slack.readFrom(sin), // slack
