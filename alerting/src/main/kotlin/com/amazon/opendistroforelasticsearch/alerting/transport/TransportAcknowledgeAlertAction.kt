@@ -42,7 +42,12 @@ class TransportAcknowledgeAlertAction @Inject constructor(
 ) {
 
     override fun doExecute(task: Task, request: AcknowledgeAlertRequest, actionListener: ActionListener<AcknowledgeAlertResponse>) {
-        AcknowledgeHandler(client, actionListener, request).start()
+        val ctx = client.threadPool().threadContext.stashContext()
+        try {
+            AcknowledgeHandler(client, actionListener, request).start()
+        } finally {
+            ctx.close()
+        }
     }
 
     inner class AcknowledgeHandler(

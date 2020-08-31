@@ -87,7 +87,12 @@ class TransportIndexMonitorAction @Inject constructor(
     }
 
     override fun doExecute(task: Task, request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>) {
-        IndexMonitorHandler(client, actionListener, request).start()
+        val ctx = client.threadPool().threadContext.stashContext()
+        try {
+            IndexMonitorHandler(client, actionListener, request).start()
+        } finally {
+            ctx.close()
+        }
     }
 
     inner class IndexMonitorHandler(

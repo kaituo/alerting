@@ -86,7 +86,7 @@ class RestIndexDestinationAction(
         }
 
         // Get roles of the user executing this rest action
-        val user = AuthUser(settings, restClient, request.headers[ConfigConstants.AUTHORIZATION])
+        val user = AuthUser(settings, restClient, request.headers[ConfigConstants.AUTHORIZATION]).get()
 
         // Validate request by parsing JSON to Destination
         val xcp = request.contentParser()

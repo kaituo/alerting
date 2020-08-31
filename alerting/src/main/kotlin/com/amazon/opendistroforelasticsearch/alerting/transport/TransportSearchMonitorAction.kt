@@ -35,14 +35,20 @@ class TransportSearchMonitorAction @Inject constructor(
 ) {
 
     override fun doExecute(task: Task, searchRequest: SearchRequest, actionListener: ActionListener<SearchResponse>) {
-        client.search(searchRequest, object : ActionListener<SearchResponse> {
-            override fun onResponse(response: SearchResponse) {
-                actionListener.onResponse(response)
-            }
 
-            override fun onFailure(t: Exception) {
-                actionListener.onFailure(t)
-            }
-        })
+        val ctx = client.threadPool().threadContext.stashContext()
+        try {
+            client.search(searchRequest, object : ActionListener<SearchResponse> {
+                override fun onResponse(response: SearchResponse) {
+                    actionListener.onResponse(response)
+                }
+
+                override fun onFailure(t: Exception) {
+                    actionListener.onFailure(t)
+                }
+            })
+        } finally {
+            ctx.close()
+        }
     }
 }
