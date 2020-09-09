@@ -37,7 +37,7 @@ import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.tasks.Task
 import org.elasticsearch.transport.TransportService
 
-private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
+    private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
 
 class TransportGetMonitorAction @Inject constructor(
     transportService: TransportService,

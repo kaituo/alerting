@@ -173,7 +173,7 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
         sweeper = JobSweeper(environment.settings(), client, clusterService, threadPool, xContentRegistry, scheduler, ALERTING_JOB_TYPES)
         this.threadPool = threadPool
         this.clusterService = clusterService
-        this.restClient = SecureRestClientBuilder(settings).build()
+        this.restClient = SecureRestClientBuilder(settings, environment.configFile()).build()
         return listOf(sweeper, scheduler, runner, scheduledJobIndices)
     }
 

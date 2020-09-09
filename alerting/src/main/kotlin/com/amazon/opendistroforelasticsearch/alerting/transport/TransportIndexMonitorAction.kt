@@ -21,6 +21,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorRespons
 import com.amazon.opendistroforelasticsearch.alerting.core.ScheduledJobIndices
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob.Companion.SCHEDULED_JOBS_INDEX
+import com.amazon.opendistroforelasticsearch.alerting.core.model.SearchInput
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.ALERTING_MAX_MONITORS
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.INDEX_TIMEOUT
@@ -28,6 +29,7 @@ import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.REQUEST_TIMEOUT
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils
 import org.apache.logging.log4j.LogManager
+import org.elasticsearch.ElasticsearchSecurityException
 import org.elasticsearch.ElasticsearchStatusException
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
@@ -180,6 +182,11 @@ class TransportIndexMonitorAction @Inject constructor(
                     IllegalArgumentException("This request would create more than the allowed monitors [$maxMonitors].")
                 )
             } else {
+                try {
+                    hasReadPermissions()
+                } catch (ex: RuntimeException) {
+                    actionListener.onFailure(ex)
+                }
                 indexMonitor()
             }
         }
@@ -292,6 +299,21 @@ class TransportIndexMonitorAction @Inject constructor(
                     entry -> failureReasons.append(entry.reason())
                 }
                 actionListener.onFailure(ElasticsearchStatusException(failureReasons.toString(), response.status()))
+            }
+        }
+
+        /**
+         *  Check if user has permissions to read the configured indices on the monitor.
+         */
+        private fun hasReadPermissions() {
+            val searchInputs = request.monitor.inputs.filter { it.name() == SearchInput.SEARCH_FIELD }
+            searchInputs.forEach {
+                val searchInput = it as SearchInput
+                if (searchInput.indices.isEmpty())
+                    return
+                val searchRequest = SearchRequest().indices(*searchInput.indices.toTypedArray())
+                        .source(SearchSourceBuilder.searchSource().size(1).query(QueryBuilders.matchAllQuery()))
+                client.search(searchRequest).actionGet()
             }
         }
     }
