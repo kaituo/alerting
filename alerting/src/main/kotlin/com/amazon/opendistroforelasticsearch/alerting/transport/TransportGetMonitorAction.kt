@@ -37,7 +37,7 @@ import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.tasks.Task
 import org.elasticsearch.transport.TransportService
 
-    private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
+private val log = LogManager.getLogger(TransportGetMonitorAction::class.java)
 
 class TransportGetMonitorAction @Inject constructor(
     transportService: TransportService,
@@ -66,6 +66,7 @@ class TransportGetMonitorAction @Inject constructor(
                 override fun onResponse(response: GetResponse) {
                     if (!response.isExists) {
                         actionListener.onFailure(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND))
+                        return
                     }
 
                     var monitor: Monitor? = null
