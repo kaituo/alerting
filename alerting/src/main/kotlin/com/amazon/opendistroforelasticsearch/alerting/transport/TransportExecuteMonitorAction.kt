@@ -5,7 +5,6 @@ import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorActio
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
-import com.amazon.opendistroforelasticsearch.alerting.elasticapi.ElasticThreadContextElement
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,7 +45,7 @@ class TransportExecuteMonitorAction @Inject constructor(
             val executeMonitor = fun(monitor: Monitor) {
                 // Launch the coroutine with the clients threadContext. This is needed to preserve authentication information
                 // stored on the threadContext set by the security plugin when using the Alerting plugin with the Security plugin.
-                //runner.launch(ElasticThreadContextElement(client.threadPool().threadContext)) {
+                // runner.launch(ElasticThreadContextElement(client.threadPool().threadContext)) {
                 runner.launch {
                     val (periodStart, periodEnd) =
                             monitor.schedule.getPeriodEndingAt(Instant.ofEpochMilli(execMonitorRequest.requestEnd.millis))
@@ -91,7 +90,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                 val monitor = execMonitorRequest.monitor as Monitor
                 executeMonitor(monitor)
             }
-        }finally {
+        } finally {
             ctx.close()
         }
     }

@@ -127,13 +127,13 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         val response = executeMonitor(monitor.id)
         val output = entityAsMap(response)
         assertEquals(monitor.name, output["monitor_name"])
-        //@Suppress("UNCHECKED_CAST")
-        //val inputResults = output.stringMap("input_results")
-        //assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
+        // @Suppress("UNCHECKED_CAST")
+        // val inputResults = output.stringMap("input_results")
+        // assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
 
-        //val alerts = searchAlerts(monitor)
-        //assertEquals("Alert not saved", 1, alerts.size)
-        //verifyAlert(alerts.single(), monitor, ERROR)*/
+        // val alerts = searchAlerts(monitor)
+        // assertEquals("Alert not saved", 1, alerts.size)
+        // verifyAlert(alerts.single(), monitor, ERROR)*/
     }
 
     fun `test execute monitor wrong monitorid`() {
