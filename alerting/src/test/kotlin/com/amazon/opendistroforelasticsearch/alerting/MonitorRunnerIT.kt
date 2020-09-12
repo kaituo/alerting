@@ -30,6 +30,7 @@ import com.amazon.opendistroforelasticsearch.alerting.model.action.Throttle
 import org.elasticsearch.client.ResponseException
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.indices.InvalidIndexNameException
 import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.builder.SearchSourceBuilder
@@ -127,9 +128,10 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         val response = executeMonitor(monitor.id)
         val output = entityAsMap(response)
         assertEquals(monitor.name, output["monitor_name"])
-        // @Suppress("UNCHECKED_CAST")
-        // val inputResults = output.stringMap("input_results")
-        // assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
+        @Suppress("UNCHECKED_CAST")
+        val inputResults = output.stringMap("input_results")
+        //sriram: needs to be fixed. error is null  below. ingore for now.
+        //assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
 
         // val alerts = searchAlerts(monitor)
         // assertEquals("Alert not saved", 1, alerts.size)
@@ -441,19 +443,19 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         assertEquals("Alert not saved", 1, alerts.size)
         verifyAlert(alerts.single(), monitor, ACTIVE)
     }
-    /*fun `test execute monitor with bad search`() {
+
+    fun `test execute monitor with bad search`() {
         val query = QueryBuilders.matchAllQuery()
         val input = SearchInput(indices = listOf("_#*IllegalIndexCharacters"), query = SearchSourceBuilder().query(query))
-        val monitor = createMonitor(randomMonitor(inputs = listOf(input), triggers = listOf(randomTrigger(condition = ALWAYS_RUN))))
 
-        val response = executeMonitor(monitor.id)
-
-        val output = entityAsMap(response)
-        assertEquals(monitor.name, output["monitor_name"])
-        @Suppress("UNCHECKED_CAST")
-        val inputResults = output.stringMap("input_results")
-        assertTrue("Missing error message from a bad query", (inputResults?.get("error") as String).isNotEmpty())
-    }*/
+        var exception: ResponseException? = null
+        try {
+            createMonitor(randomMonitor(inputs = listOf(input), triggers = listOf(randomTrigger(condition = ALWAYS_RUN))))
+        } catch (ex: ResponseException) {
+            exception = ex
+        }
+        assertEquals(400, exception?.response?.statusLine?.statusCode)
+    }
 
     fun `test execute monitor non-dryrun`() {
         val monitor = createMonitor(
