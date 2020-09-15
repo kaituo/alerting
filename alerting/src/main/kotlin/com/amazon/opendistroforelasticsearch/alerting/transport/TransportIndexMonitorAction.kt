@@ -185,6 +185,7 @@ class TransportIndexMonitorAction @Inject constructor(
                     hasReadPermissions()
                 } catch (ex: RuntimeException) {
                     actionListener.onFailure(ex)
+                    return
                 }
                 indexMonitor()
             }

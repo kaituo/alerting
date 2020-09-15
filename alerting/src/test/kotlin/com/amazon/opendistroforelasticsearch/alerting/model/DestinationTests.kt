@@ -15,8 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.model
 
-import com.amazon.opendistroforelasticsearch.alerting.builder
-import com.amazon.opendistroforelasticsearch.alerting.elasticapi.string
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.Chime
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.CustomWebhook
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.Destination
@@ -26,7 +24,6 @@ import com.amazon.opendistroforelasticsearch.alerting.randomUser
 import com.amazon.opendistroforelasticsearch.alerting.util.DestinationType
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
-import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.test.ESTestCase
 import java.time.Instant
 
@@ -208,14 +205,16 @@ class DestinationTests : ESTestCase() {
     }
 
     fun `test chime destination without user`() {
-        //val userString = "{\"type\":\"chime\",\"name\":\"TestChimeDest\",\"user\":{\"name\":\"joe\",\"backend_roles\":[\"ops\",\"backup\"],\"roles\":[\"ops_role, backup_role\"],\"custom_attribute_names\":[\"test_attr=test\"]},\"schema_version\":1,\"last_update_time\":1600063313658,\"chime\":{\"url\":\"test.com\"}}"
-        val userString = "{\"type\":\"chime\",\"name\":\"TestChimeDest\",\"schema_version\":1,\"last_update_time\":1600063313658,\"chime\":{\"url\":\"test.com\"}}"
+        val userString = "{\"type\":\"chime\",\"name\":\"TestChimeDest\",\"schema_version\":1," +
+                "\"last_update_time\":1600063313658,\"chime\":{\"url\":\"test.com\"}}"
         val parsedDest = Destination.parse(parser(userString))
         assertNull(parsedDest.user)
     }
 
     fun `test chime destination with user`() {
-        val userString = "{\"type\":\"chime\",\"name\":\"TestChimeDest\",\"user\":{\"name\":\"joe\",\"backend_roles\":[\"ops\",\"backup\"],\"roles\":[\"ops_role, backup_role\"],\"custom_attribute_names\":[\"test_attr=test\"]},\"schema_version\":1,\"last_update_time\":1600063313658,\"chime\":{\"url\":\"test.com\"}}"
+        val userString = "{\"type\":\"chime\",\"name\":\"TestChimeDest\",\"user\":{\"name\":\"joe\",\"backend_roles\"" +
+                ":[\"ops\",\"backup\"],\"roles\":[\"ops_role, backup_role\"],\"custom_attribute_names\":[\"test_attr=test\"]}," +
+                "\"schema_version\":1,\"last_update_time\":1600063313658,\"chime\":{\"url\":\"test.com\"}}"
         val parsedDest = Destination.parse(parser(userString))
         assertNotNull(parsedDest.user)
     }

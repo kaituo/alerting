@@ -24,7 +24,6 @@ import com.amazon.opendistroforelasticsearch.alerting.randomAction
 import com.amazon.opendistroforelasticsearch.alerting.randomActionExecutionResult
 import com.amazon.opendistroforelasticsearch.alerting.randomAlert
 import com.amazon.opendistroforelasticsearch.alerting.randomMonitor
-import com.amazon.opendistroforelasticsearch.alerting.randomMonitorWithoutUser
 import com.amazon.opendistroforelasticsearch.alerting.randomThrottle
 import com.amazon.opendistroforelasticsearch.alerting.randomTrigger
 import com.amazon.opendistroforelasticsearch.alerting.randomUser
@@ -143,12 +142,14 @@ class XContentTests : ESTestCase() {
 
         val parsedUser = User.parse(parser(userString))
         assertEquals("Round tripping user doesn't work", user, parsedUser)
-        assertEquals("" , parsedUser.name)
+        assertEquals("", parsedUser.name)
         assertEquals(0, parsedUser.roles.size)
     }
 
     fun `test monitor parsing without user`() {
-        val prevVersionMonitorStr = "{\"type\":\"monitor\",\"schema_version\":0,\"name\":\"bkHIMJSbfj\",\"enabled\":true,\"enabled_time\":1600052622174,\"schedule\":{\"period\":{\"interval\":5,\"unit\":\"MINUTES\"}},\"inputs\":[{\"search\":{\"indices\":[],\"query\":{\"query\":{\"match_all\":{\"boost\":1.0}}}}}],\"triggers\":[],\"last_update_time\":1600052622174}"
+        val prevVersionMonitorStr = "{\"type\":\"monitor\",\"schema_version\":0,\"name\":\"bkHIMJSbfj\",\"enabled\":true,\"enabled_time" +
+                "\":1600052622174,\"schedule\":{\"period\":{\"interval\":5,\"unit\":\"MINUTES\"}},\"inputs\":[{\"search\":{\"indices\"" +
+                ":[],\"query\":{\"query\":{\"match_all\":{\"boost\":1.0}}}}}],\"triggers\":[],\"last_update_time\":1600052622174}"
         val parsedMonitor = Monitor.parse(parser(prevVersionMonitorStr))
         assertNull(parsedMonitor.user)
     }

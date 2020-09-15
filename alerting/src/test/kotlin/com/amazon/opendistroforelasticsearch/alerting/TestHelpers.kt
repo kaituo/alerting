@@ -74,14 +74,14 @@ fun randomMonitor(
 
 // Monitor of older versions without security.
 fun randomMonitorWithoutUser(
-        name: String = ESRestTestCase.randomAlphaOfLength(10),
-        inputs: List<Input> = listOf(SearchInput(emptyList(), SearchSourceBuilder().query(QueryBuilders.matchAllQuery()))),
-        schedule: Schedule = IntervalSchedule(interval = 5, unit = ChronoUnit.MINUTES),
-        enabled: Boolean = ESTestCase.randomBoolean(),
-        triggers: List<Trigger> = (1..randomInt(10)).map { randomTrigger() },
-        enabledTime: Instant? = if (enabled) Instant.now().truncatedTo(ChronoUnit.MILLIS) else null,
-        lastUpdateTime: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
-        withMetadata: Boolean = false
+    name: String = ESRestTestCase.randomAlphaOfLength(10),
+    inputs: List<Input> = listOf(SearchInput(emptyList(), SearchSourceBuilder().query(QueryBuilders.matchAllQuery()))),
+    schedule: Schedule = IntervalSchedule(interval = 5, unit = ChronoUnit.MINUTES),
+    enabled: Boolean = ESTestCase.randomBoolean(),
+    triggers: List<Trigger> = (1..randomInt(10)).map { randomTrigger() },
+    enabledTime: Instant? = if (enabled) Instant.now().truncatedTo(ChronoUnit.MILLIS) else null,
+    lastUpdateTime: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
+    withMetadata: Boolean = false
 ): Monitor {
     return Monitor(name = name, enabled = enabled, inputs = inputs, schedule = schedule, triggers = triggers,
             enabledTime = enabledTime, lastUpdateTime = lastUpdateTime,

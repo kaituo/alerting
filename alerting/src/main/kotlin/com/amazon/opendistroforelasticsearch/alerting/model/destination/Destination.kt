@@ -43,16 +43,16 @@ import java.util.Locale
  * A value object that represents a Destination message.
  */
 data class Destination(
-        val id: String = NO_ID,
-        val version: Long = NO_VERSION,
-        val schemaVersion: Int = NO_SCHEMA_VERSION,
-        val type: DestinationType,
-        val name: String,
-        val user: User?,
-        val lastUpdateTime: Instant,
-        val chime: Chime?,
-        val slack: Slack?,
-        val customWebhook: CustomWebhook?
+    val id: String = NO_ID,
+    val version: Long = NO_VERSION,
+    val schemaVersion: Int = NO_SCHEMA_VERSION,
+    val type: DestinationType,
+    val name: String,
+    val user: User?,
+    val lastUpdateTime: Instant,
+    val chime: Chime?,
+    val slack: Slack?,
+    val customWebhook: CustomWebhook?
 ) : ToXContent {
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {

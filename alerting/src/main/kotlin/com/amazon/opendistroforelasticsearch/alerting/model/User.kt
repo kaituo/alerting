@@ -7,16 +7,15 @@ import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.common.xcontent.ToXContentObject
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentParser
-import org.elasticsearch.common.xcontent.XContentParserUtils
 import org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken
 import java.io.IOException
 
 data class User(
-        val name: String,
-        val backendRoles: List<String>,
-        val roles: List<String>,
-        val customAttNames: List<String>
-): Writeable, ToXContentObject {
+    val name: String,
+    val backendRoles: List<String>,
+    val roles: List<String>,
+    val customAttNames: List<String>
+) : Writeable, ToXContentObject {
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
@@ -56,7 +55,6 @@ data class User(
             val roles: MutableList<String> = mutableListOf()
             val customAttNames: MutableList<String> = mutableListOf()
 
-            //XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, xcp.currentToken(), xcp::getTokenLocation)
             while (xcp.nextToken() != XContentParser.Token.END_OBJECT) {
                 val fieldName = xcp.currentName()
                 xcp.nextToken()
