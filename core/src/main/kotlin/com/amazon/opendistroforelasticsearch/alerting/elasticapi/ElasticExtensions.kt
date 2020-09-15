@@ -172,7 +172,7 @@ class ElasticThreadContextElement(private val threadContext: ThreadContext) : Th
     override fun updateThreadContext(context: CoroutineContext) = this.context.close()
 }
 
-class InjectorContextElement(id: String, settings: Settings, threadContext: ThreadContext, private val roles: String)
+class InjectorContextElement(id: String, settings: Settings, threadContext: ThreadContext, private val roles: List<String>?)
     : ThreadContextElement<Unit> {
 
     companion object Key : CoroutineContext.Key<InjectorContextElement>

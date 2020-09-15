@@ -19,6 +19,7 @@ import com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexDestinationAction
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexDestinationRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexDestinationResponse
+import com.amazon.opendistroforelasticsearch.alerting.model.User
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.Destination
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.INDEX_TIMEOUT
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_PRIMARY_TERM
@@ -92,7 +93,7 @@ class RestIndexDestinationAction(
         val xcp = request.contentParser()
         XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
         val destination = Destination.parse(xcp, id)
-                .copy(user = user.userName).copy(associatedRoles = user.rolesString)
+                .copy(user = User(user.userName, user.backendRoles, user.roles, user.customAttNames))
         val seqNo = request.paramAsLong(IF_SEQ_NO, SequenceNumbers.UNASSIGNED_SEQ_NO)
         val primaryTerm = request.paramAsLong(IF_PRIMARY_TERM, SequenceNumbers.UNASSIGNED_PRIMARY_TERM)
         val refreshPolicy = if (request.hasParam(REFRESH)) {

@@ -52,8 +52,7 @@ data class Monitor(
     override val schedule: Schedule,
     override val lastUpdateTime: Instant,
     override val enabledTime: Instant?,
-    val user: String,
-    val associatedRoles: String,
+    val user: User?,
     val schemaVersion: Int = NO_SCHEMA_VERSION,
     val inputs: List<Input>,
     val triggers: List<Trigger>,
@@ -86,8 +85,9 @@ data class Monitor(
         Schedule.readFrom(sin), // schedule
         sin.readInstant(), // lastUpdateTime
         sin.readOptionalInstant(), // enabledTime
-        sin.readString(), // user
-        sin.readString(), // associatedRoles
+        if (sin.readBoolean()) {
+            User.readFrom(sin) // user
+        } else null,
         sin.readInt(), // schemaVersion
         sin.readList(::SearchInput), // inputs
         sin.readList(::Trigger), // triggers
@@ -108,8 +108,7 @@ data class Monitor(
         builder.field(TYPE_FIELD, type)
                 .field(SCHEMA_VERSION_FIELD, schemaVersion)
                 .field(NAME_FIELD, name)
-                .field(USER_FIELD, user)
-                .field(ASSOCIATED_ROLES_FIELD, associatedRoles)
+                .optionalUserField(user)
                 .field(ENABLED_FIELD, enabled)
                 .optionalTimeField(ENABLED_TIME_FIELD, enabledTime)
                 .field(SCHEDULE_FIELD, schedule)
@@ -123,8 +122,15 @@ data class Monitor(
 
     override fun fromDocument(id: String, version: Long): Monitor = copy(id = id, version = version)
 
+    private fun XContentBuilder.optionalUserField(user: User?): XContentBuilder {
+        if (user == null) {
+            return nullField(USER_FIELD)
+        }
+        return this.field(USER_FIELD, user)
+    }
+
     @Throws(IOException::class)
-    fun writeTo(out: StreamOutput) {
+    override fun writeTo(out: StreamOutput) {
         out.writeString(id)
         out.writeLong(version)
         out.writeString(name)
@@ -137,8 +143,12 @@ data class Monitor(
         schedule.writeTo(out)
         out.writeInstant(lastUpdateTime)
         out.writeOptionalInstant(enabledTime)
-        out.writeString(user)
-        out.writeString(associatedRoles)
+        if (user != null) {
+            out.writeBoolean(true)
+            user?.writeTo(out)
+        } else {
+            out.writeBoolean(false)
+        }
         out.writeInt(schemaVersion)
         out.writeCollection(inputs)
         out.writeCollection(triggers)
@@ -151,7 +161,6 @@ data class Monitor(
         const val SCHEMA_VERSION_FIELD = "schema_version"
         const val NAME_FIELD = "name"
         const val USER_FIELD = "user"
-        const val ASSOCIATED_ROLES_FIELD = "associated_roles"
         const val ENABLED_FIELD = "enabled"
         const val SCHEDULE_FIELD = "schedule"
         const val TRIGGERS_FIELD = "triggers"
@@ -173,8 +182,7 @@ data class Monitor(
         @Throws(IOException::class)
         fun parse(xcp: XContentParser, id: String = NO_ID, version: Long = NO_VERSION): Monitor {
             lateinit var name: String
-            var user = ""
-            var associatedRoles = ""
+            var user: User? = null
             lateinit var schedule: Schedule
             var lastUpdateTime: Instant? = null
             var enabledTime: Instant? = null
@@ -192,8 +200,7 @@ data class Monitor(
                 when (fieldName) {
                     SCHEMA_VERSION_FIELD -> schemaVersion = xcp.intValue()
                     NAME_FIELD -> name = xcp.text()
-                    USER_FIELD -> user = xcp.text()
-                    ASSOCIATED_ROLES_FIELD -> associatedRoles = xcp.text()
+                    USER_FIELD -> user = User.parse(xcp)
                     ENABLED_FIELD -> enabled = xcp.booleanValue()
                     SCHEDULE_FIELD -> schedule = Schedule.parse(xcp)
                     INPUTS_FIELD -> {
@@ -230,7 +237,6 @@ data class Monitor(
                     lastUpdateTime ?: Instant.now(),
                     enabledTime,
                     user,
-                    associatedRoles,
                     schemaVersion,
                     inputs.toList(),
                     triggers.toList(),

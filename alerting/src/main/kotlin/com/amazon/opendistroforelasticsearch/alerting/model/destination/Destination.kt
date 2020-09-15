@@ -24,6 +24,8 @@ import com.amazon.opendistroforelasticsearch.alerting.destination.response.Desti
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.convertToMap
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.instant
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
+import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
+import com.amazon.opendistroforelasticsearch.alerting.model.User
 import com.amazon.opendistroforelasticsearch.alerting.util.DestinationType
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils.Companion.NO_SCHEMA_VERSION
 import org.apache.logging.log4j.LogManager
@@ -41,17 +43,16 @@ import java.util.Locale
  * A value object that represents a Destination message.
  */
 data class Destination(
-    val id: String = NO_ID,
-    val version: Long = NO_VERSION,
-    val schemaVersion: Int = NO_SCHEMA_VERSION,
-    val type: DestinationType,
-    val name: String,
-    val user: String,
-    val associatedRoles: String,
-    val lastUpdateTime: Instant,
-    val chime: Chime?,
-    val slack: Slack?,
-    val customWebhook: CustomWebhook?
+        val id: String = NO_ID,
+        val version: Long = NO_VERSION,
+        val schemaVersion: Int = NO_SCHEMA_VERSION,
+        val type: DestinationType,
+        val name: String,
+        val user: User?,
+        val lastUpdateTime: Instant,
+        val chime: Chime?,
+        val slack: Slack?,
+        val customWebhook: CustomWebhook?
 ) : ToXContent {
 
     override fun toXContent(builder: XContentBuilder, params: ToXContent.Params): XContentBuilder {
@@ -59,8 +60,7 @@ data class Destination(
         if (params.paramAsBoolean("with_type", false)) builder.startObject(DESTINATION)
         builder.field(TYPE_FIELD, type.value)
                 .field(NAME_FIELD, name)
-                .field(USER_FIELD, user)
-                .field(ASSOCIATED_ROLES_FIELD, associatedRoles)
+                .optionalUserField(user)
                 .field(SCHEMA_VERSION, schemaVersion)
                 .optionalTimeField(LAST_UPDATE_TIME_FIELD, lastUpdateTime)
                 .field(type.value, constructResponseForDestinationType(type))
@@ -72,6 +72,13 @@ data class Destination(
         return toXContent(builder, ToXContent.EMPTY_PARAMS)
     }
 
+    private fun XContentBuilder.optionalUserField(user: User?): XContentBuilder {
+        if (user == null) {
+            return nullField(Monitor.USER_FIELD)
+        }
+        return this.field(Monitor.USER_FIELD, user)
+    }
+
     @Throws(IOException::class)
     fun writeTo(out: StreamOutput) {
         out.writeString(id)
@@ -79,8 +86,12 @@ data class Destination(
         out.writeInt(schemaVersion)
         out.writeEnum(type)
         out.writeString(name)
-        out.writeString(user)
-        out.writeString(associatedRoles)
+        if (user != null) {
+            out.writeBoolean(true)
+            user?.writeTo(out)
+        } else {
+            out.writeBoolean(false)
+        }
         out.writeInstant(lastUpdateTime)
         if (chime != null) {
             out.writeBoolean(true)
@@ -107,7 +118,6 @@ data class Destination(
         const val TYPE_FIELD = "type"
         const val NAME_FIELD = "name"
         const val USER_FIELD = "user"
-        const val ASSOCIATED_ROLES_FIELD = "associated_roles"
         const val NO_ID = ""
         const val NO_VERSION = 1L
         const val SCHEMA_VERSION = "schema_version"
@@ -125,8 +135,7 @@ data class Destination(
         @Throws(IOException::class)
         fun parse(xcp: XContentParser, id: String = NO_ID, version: Long = NO_VERSION): Destination {
             lateinit var name: String
-            var user: String = ""
-            var associatedRoles = ""
+            var user: User? = null
             lateinit var type: String
             var slack: Slack? = null
             var chime: Chime? = null
@@ -141,8 +150,7 @@ data class Destination(
 
                 when (fieldName) {
                     NAME_FIELD -> name = xcp.text()
-                    USER_FIELD -> user = xcp.text()
-                    ASSOCIATED_ROLES_FIELD -> associatedRoles = xcp.text()
+                    USER_FIELD -> user = User.parse(xcp)
                     TYPE_FIELD -> {
                         type = xcp.text()
                         val allowedTypes = DestinationType.values().map { it.value }
@@ -177,7 +185,6 @@ data class Destination(
                     DestinationType.valueOf(type.toUpperCase(Locale.ROOT)),
                     requireNotNull(name) { "Destination name is null" },
                     user,
-                    associatedRoles,
                     lastUpdateTime ?: Instant.now(),
                     chime,
                     slack,
@@ -193,8 +200,9 @@ data class Destination(
                 sin.readInt(), // schemaVersion
                 sin.readEnum(DestinationType::class.java), // type
                 sin.readString(), // name
-                sin.readString(), // user
-                sin.readString(), // associatedRoles
+                if (sin.readBoolean()) {
+                    User.readFrom(sin) // user
+                } else null,
                 sin.readInstant(), // lastUpdateTime
                 Chime.readFrom(sin), // chime
                 Slack.readFrom(sin), // slack

@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.alerting.action
 
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.Chime
 import com.amazon.opendistroforelasticsearch.alerting.model.destination.Destination
+import com.amazon.opendistroforelasticsearch.alerting.randomUser
 import com.amazon.opendistroforelasticsearch.alerting.util.DestinationType
 import org.elasticsearch.common.io.stream.BytesStreamOutput
 import org.elasticsearch.common.io.stream.StreamInput
@@ -29,8 +30,8 @@ class IndexDestinationResponseTests : ESTestCase() {
     fun `test index destination response`() {
 
         val req = IndexDestinationResponse("1234", 0L, 1L, 2L, RestStatus.CREATED,
-                Destination("1234", 0L, 1, DestinationType.CHIME, "TestChimeDest", "joe",
-                        "role_1,role_2", Instant.now(), Chime("test.com"), null, null))
+                Destination("1234", 0L, 1, DestinationType.CHIME, "TestChimeDest",
+                        randomUser(), Instant.now(), Chime("test.com"), null, null))
 
         assertNotNull(req)
 

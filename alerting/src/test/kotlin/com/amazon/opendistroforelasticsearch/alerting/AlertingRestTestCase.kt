@@ -113,8 +113,7 @@ abstract class AlertingRestTestCase : ODFERestTestCase() {
         return Destination(
                 type = DestinationType.TEST_ACTION,
                 name = "test",
-                user = "admin",
-                associatedRoles = "role_1,rol_2",
+                user = randomUser(),
                 lastUpdateTime = Instant.now(),
                 chime = null,
                 slack = null,

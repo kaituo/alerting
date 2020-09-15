@@ -19,6 +19,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
+import com.amazon.opendistroforelasticsearch.alerting.model.User
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_SEQ_NO
 import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH
@@ -92,7 +93,8 @@ class RestIndexMonitorAction(
         val xcp = request.contentParser()
         ensureExpectedToken(Token.START_OBJECT, xcp.nextToken(), xcp::getTokenLocation)
         val monitor = Monitor.parse(xcp, id).copy(lastUpdateTime = Instant.now())
-                .copy(user = user.userName).copy(associatedRoles = user.rolesString)
+                .copy(user = User(user.userName, user.backendRoles, user.roles, user.customAttNames))
+
         val seqNo = request.paramAsLong(IF_SEQ_NO, SequenceNumbers.UNASSIGNED_SEQ_NO)
         val primaryTerm = request.paramAsLong(IF_PRIMARY_TERM, SequenceNumbers.UNASSIGNED_PRIMARY_TERM)
         val refreshPolicy = if (request.hasParam(REFRESH)) {

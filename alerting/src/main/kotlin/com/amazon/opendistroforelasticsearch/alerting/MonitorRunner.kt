@@ -177,7 +177,10 @@ class MonitorRunner(
     }
 
     suspend fun runMonitor(monitor: Monitor, periodStart: Instant, periodEnd: Instant, dryrun: Boolean = false): MonitorRunResult {
-        logger.debug("Running monitor: ${monitor.name} with roles: ${monitor.associatedRoles} Thread: ${Thread.currentThread().name}")
+        //monitor.user = null : means prev version of monitor
+        //monitor.user.name = null or user.roles.size = 0 : means new version with sec disabled.
+        //monitor.user.name != null : means new version with sec enabled.
+        logger.debug("Running monitor: ${monitor.name} with roles: ${monitor.user?.roles} Thread: ${Thread.currentThread().name}")
         if (periodStart == periodEnd) {
             logger.warn("Start and end time are the same: $periodStart. This monitor will probably only run once.")
         }
@@ -193,7 +196,7 @@ class MonitorRunner(
             logger.error("Error loading alerts for monitor: $id", e)
             return monitorResult.copy(error = e)
         }
-        runBlocking(InjectorContextElement(monitor.id, settings, threadPool.threadContext, monitor.associatedRoles)) {
+        runBlocking(InjectorContextElement(monitor.id, settings, threadPool.threadContext, monitor.user?.roles)) {
             monitorResult = monitorResult.copy(inputResults = collectInputResults(monitor, periodStart, periodEnd))
         }
         val updatedAlerts = mutableListOf<Alert>()

@@ -37,8 +37,6 @@ data class Alert(
     val monitorId: String,
     val monitorName: String,
     val monitorVersion: Long,
-    val monitorUser: String? = null,
-    val monitorAssociatedroles: String? = null,
     val triggerId: String,
     val triggerName: String,
     val state: State,
@@ -69,7 +67,6 @@ data class Alert(
         actionExecutionResults: List<ActionExecutionResult> = mutableListOf(),
         schemaVersion: Int = NO_SCHEMA_VERSION
     ) : this(monitorId = monitor.id, monitorName = monitor.name, monitorVersion = monitor.version,
-            monitorUser = monitor.user, monitorAssociatedroles = monitor.associatedRoles,
             triggerId = trigger.id, triggerName = trigger.name, state = state, startTime = startTime,
             lastNotificationTime = lastNotificationTime, errorMessage = errorMessage, errorHistory = errorHistory,
             severity = trigger.severity, actionExecutionResults = actionExecutionResults, schemaVersion = schemaVersion)
@@ -80,25 +77,23 @@ data class Alert(
 
     @Throws(IOException::class)
     constructor(sin: StreamInput): this(
-            sin.readString(), // id
-            sin.readLong(), // version
-            sin.readInt(), // schemaVersion
-            sin.readString(), // monitorId
-            sin.readString(), // monitorName
-            sin.readLong(), // monitorVersion
-            sin.readString(), // monitorUser
-            sin.readString(), // monitorAssociatedroles
-            sin.readString(), // triggerId
-            sin.readString(), // triggerName
-            sin.readEnum(State::class.java), // state
-            sin.readInstant(), // startTime
-            sin.readOptionalInstant(), // endTime
-            sin.readOptionalInstant(), // lastNotificationTime
-            sin.readOptionalInstant(), // acknowledgedTime
-            sin.readOptionalString(), // errorMessage
-            sin.readList(::AlertError), // errorHistory
-            sin.readString(), // severity
-            sin.readList(::ActionExecutionResult) // actionExecutionResults
+        sin.readString(), // id
+        sin.readLong(), // version
+        sin.readInt(), // schemaVersion
+        sin.readString(), // monitorId
+        sin.readString(), // monitorName
+        sin.readLong(), // monitorVersion
+        sin.readString(), // triggerId
+        sin.readString(), // triggerName
+        sin.readEnum(State::class.java), // state
+        sin.readInstant(), // startTime
+        sin.readOptionalInstant(), // endTime
+        sin.readOptionalInstant(), // lastNotificationTime
+        sin.readOptionalInstant(), // acknowledgedTime
+        sin.readOptionalString(), // errorMessage
+        sin.readList(::AlertError), // errorHistory
+        sin.readString(), // severity
+        sin.readList(::ActionExecutionResult) // actionExecutionResults
     )
 
     fun isAcknowledged(): Boolean = (state == State.ACKNOWLEDGED)
@@ -111,8 +106,6 @@ data class Alert(
         out.writeString(monitorId)
         out.writeString(monitorName)
         out.writeLong(monitorVersion)
-        out.writeString(monitorUser)
-        out.writeString(monitorAssociatedroles)
         out.writeString(triggerId)
         out.writeString(triggerName)
         out.writeEnum(state)
@@ -134,8 +127,6 @@ data class Alert(
         const val MONITOR_ID_FIELD = "monitor_id"
         const val MONITOR_VERSION_FIELD = "monitor_version"
         const val MONITOR_NAME_FIELD = "monitor_name"
-        const val MONITOR_USER = "monitor_user"
-        const val MONITOR_ASSOCIATED_ROLES = "monitor_associated_roles"
         const val TRIGGER_ID_FIELD = "trigger_id"
         const val TRIGGER_NAME_FIELD = "trigger_name"
         const val STATE_FIELD = "state"
@@ -159,8 +150,6 @@ data class Alert(
             var schemaVersion = NO_SCHEMA_VERSION
             lateinit var monitorName: String
             var monitorVersion: Long = Versions.NOT_FOUND
-            var monitorUser: String? = null
-            var monitorAssociatedroles: String? = null
             lateinit var triggerId: String
             lateinit var triggerName: String
             lateinit var state: State
@@ -183,8 +172,6 @@ data class Alert(
                     SCHEMA_VERSION_FIELD -> schemaVersion = xcp.intValue()
                     MONITOR_NAME_FIELD -> monitorName = xcp.text()
                     MONITOR_VERSION_FIELD -> monitorVersion = xcp.longValue()
-                    MONITOR_USER -> monitorUser = xcp.text()
-                    MONITOR_ASSOCIATED_ROLES -> monitorAssociatedroles = xcp.text()
                     TRIGGER_ID_FIELD -> triggerId = xcp.text()
                     STATE_FIELD -> state = State.valueOf(xcp.text())
                     TRIGGER_NAME_FIELD -> triggerName = xcp.text()
@@ -211,7 +198,6 @@ data class Alert(
 
             return Alert(id = id, version = version, schemaVersion = schemaVersion, monitorId = requireNotNull(monitorId),
                     monitorName = requireNotNull(monitorName), monitorVersion = monitorVersion,
-                    monitorUser = monitorUser, monitorAssociatedroles = monitorAssociatedroles,
                     triggerId = requireNotNull(triggerId), triggerName = requireNotNull(triggerName),
                     state = requireNotNull(state), startTime = requireNotNull(startTime), endTime = endTime,
                     lastNotificationTime = lastNotificationTime, acknowledgedTime = acknowledgedTime,
@@ -232,8 +218,6 @@ data class Alert(
                 .field(SCHEMA_VERSION_FIELD, schemaVersion)
                 .field(MONITOR_VERSION_FIELD, monitorVersion)
                 .field(MONITOR_NAME_FIELD, monitorName)
-                .field(MONITOR_USER, monitorUser)
-                .field(MONITOR_ASSOCIATED_ROLES, monitorAssociatedroles)
                 .field(TRIGGER_ID_FIELD, triggerId)
                 .field(TRIGGER_NAME_FIELD, triggerName)
                 .field(STATE_FIELD, state)
