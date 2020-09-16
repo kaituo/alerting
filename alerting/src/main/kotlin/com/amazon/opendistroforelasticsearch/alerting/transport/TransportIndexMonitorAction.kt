@@ -27,6 +27,7 @@ import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.INDEX_TIMEOUT
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.MAX_ACTION_THROTTLE_VALUE
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings.Companion.REQUEST_TIMEOUT
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.ElasticsearchStatusException
@@ -87,6 +88,10 @@ class TransportIndexMonitorAction @Inject constructor(
     }
 
     override fun doExecute(task: Task, request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>) {
+
+        if(!isValidIndex(request, actionListener))
+            return
+
         val ctx = client.threadPool().threadContext.stashContext()
         try {
             IndexMonitorHandler(client, actionListener, request).start()
@@ -108,7 +113,7 @@ class TransportIndexMonitorAction @Inject constructor(
                         onCreateMappingsResponse(response)
                     }
                     override fun onFailure(t: Exception) {
-                        actionListener.onFailure(t)
+                        actionListener.onFailure(AlertingError.wrap(t))
                     }
                 })
             } else if (!IndexUtils.scheduledJobIndexUpdated) {
@@ -119,7 +124,7 @@ class TransportIndexMonitorAction @Inject constructor(
                                 onUpdateMappingsResponse(response)
                             }
                             override fun onFailure(t: Exception) {
-                                actionListener.onFailure(t)
+                                actionListener.onFailure(AlertingError.wrap(t))
                             }
                         })
             } else {
@@ -137,7 +142,7 @@ class TransportIndexMonitorAction @Inject constructor(
             try {
                 validateActionThrottle(request.monitor, maxActionThrottle, TimeValue.timeValueMinutes(1))
             } catch (e: RuntimeException) {
-                actionListener.onFailure(e)
+                actionListener.onFailure(AlertingError.wrap(e))
                 return
             }
 
@@ -152,7 +157,7 @@ class TransportIndexMonitorAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
@@ -176,17 +181,12 @@ class TransportIndexMonitorAction @Inject constructor(
         private fun onSearchResponse(response: SearchResponse) {
             val totalHits = response.hits.totalHits?.value
             if (totalHits != null && totalHits >= maxMonitors) {
-                log.error("This request would create more than the allowed monitors [$maxMonitors].")
+                log.error("This request would wrap more than the allowed monitors [$maxMonitors].")
                 actionListener.onFailure(
-                    IllegalArgumentException("This request would create more than the allowed monitors [$maxMonitors].")
+                    AlertingError.wrap(IllegalArgumentException("This request would wrap more than the allowed monitors [$maxMonitors]."))
                 )
             } else {
-                try {
-                    hasReadPermissions()
-                } catch (ex: RuntimeException) {
-                    actionListener.onFailure(ex)
-                    return
-                }
+
                 indexMonitor()
             }
         }
@@ -198,11 +198,8 @@ class TransportIndexMonitorAction @Inject constructor(
                 IndexUtils.scheduledJobIndexUpdated()
             } else {
                 log.error("Create ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.")
-                actionListener.onFailure(
-                        ElasticsearchStatusException(
-                                "Create ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged",
-                                RestStatus.INTERNAL_SERVER_ERROR
-                        )
+                actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(
+                        "Create ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged", RestStatus.INTERNAL_SERVER_ERROR))
                 )
             }
         }
@@ -214,11 +211,9 @@ class TransportIndexMonitorAction @Inject constructor(
                 prepareMonitorIndexing()
             } else {
                 log.error("Update ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.")
-                actionListener.onFailure(
-                        ElasticsearchStatusException(
+                actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(
                                 "Updated ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.",
-                                RestStatus.INTERNAL_SERVER_ERROR
-                        )
+                                RestStatus.INTERNAL_SERVER_ERROR))
                 )
             }
         }
@@ -235,14 +230,14 @@ class TransportIndexMonitorAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
-                        actionListener.onFailure(ElasticsearchStatusException(failureReasons.toString(), response.status()))
+                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
                             response.primaryTerm, RestStatus.CREATED, request.monitor))
                 }
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
@@ -254,15 +249,15 @@ class TransportIndexMonitorAction @Inject constructor(
                     onGetResponse(response)
                 }
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
 
         private fun onGetResponse(response: GetResponse) {
             if (!response.isExists) {
-                actionListener.onFailure(
-                        ElasticsearchStatusException("Monitor with ${request.monitorId} is not found", RestStatus.NOT_FOUND))
+                actionListener.onFailure(AlertingError.wrap(
+                        ElasticsearchStatusException("Monitor with ${request.monitorId} is not found", RestStatus.NOT_FOUND)))
                 return
             }
 
@@ -287,7 +282,7 @@ class TransportIndexMonitorAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
-                        actionListener.onFailure(ElasticsearchStatusException(failureReasons.toString(), response.status()))
+                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(
@@ -296,7 +291,7 @@ class TransportIndexMonitorAction @Inject constructor(
                     )
                 }
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
@@ -311,20 +306,29 @@ class TransportIndexMonitorAction @Inject constructor(
             }
             return null
         }
+    }
 
-        /**
-         *  Check if user has permissions to read the configured indices on the monitor.
-         */
-        private fun hasReadPermissions() {
-            val searchInputs = request.monitor.inputs.filter { it.name() == SearchInput.SEARCH_FIELD }
-            searchInputs.forEach {
-                val searchInput = it as SearchInput
-                if (searchInput.indices.isEmpty())
-                    return
-                val searchRequest = SearchRequest().indices(*searchInput.indices.toTypedArray())
-                        .source(SearchSourceBuilder.searchSource().size(1).query(QueryBuilders.matchAllQuery()))
-                client.search(searchRequest).actionGet()
-            }
+    /**
+     *  Check if user has permissions to read the configured indices on the monitor.
+     */
+    private fun isValidIndex(request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>) : Boolean {
+        var ret = true
+        val searchInputs = request.monitor.inputs.filter { it.name() == SearchInput.SEARCH_FIELD }
+        searchInputs.forEach {
+            val searchInput = it as SearchInput
+            val searchRequest = SearchRequest().indices(*searchInput.indices.toTypedArray())
+                    .source(SearchSourceBuilder.searchSource().size(1).query(QueryBuilders.matchAllQuery()))
+            client.search(searchRequest, object : ActionListener<SearchResponse> {
+                override fun onResponse(searchResponse: SearchResponse) {
+                    // ignore
+                }
+
+                override fun onFailure(t: Exception) {
+                    actionListener.onFailure(AlertingError.wrap(t))
+                    ret = false
+                }
+            })
         }
+        return ret
     }
 }

@@ -6,6 +6,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorReque
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,7 +58,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                     } catch (e: Exception) {
                         log.error("Unexpected error running monitor", e)
                         withContext(Dispatchers.IO) {
-                            actionListener.onFailure(e)
+                            actionListener.onFailure(AlertingError.wrap(e))
                         }
                     }
                 }
@@ -68,9 +69,9 @@ class TransportExecuteMonitorAction @Inject constructor(
                 client.get(getRequest, object : ActionListener<GetResponse> {
                     override fun onResponse(response: GetResponse) {
                         if (!response.isExists) {
-                            actionListener.onFailure(
+                            actionListener.onFailure(AlertingError.wrap(
                                     ElasticsearchStatusException("Can't find monitor with id: ${response.id}", RestStatus.NOT_FOUND)
-                            )
+                            ))
                             return
                         }
                         if (!response.isSourceEmpty) {
@@ -83,7 +84,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                     }
 
                     override fun onFailure(t: Exception) {
-                        actionListener.onFailure(t)
+                        actionListener.onFailure(AlertingError.wrap(t))
                     }
                 })
             } else {

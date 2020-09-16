@@ -78,7 +78,7 @@ abstract class AlertingRestTestCase : ODFERestTestCase() {
     protected fun createMonitor(monitor: Monitor, refresh: Boolean = true): Monitor {
         val response = client().makeRequest("POST", "$ALERTING_BASE_URI?refresh=$refresh", emptyMap(),
                 monitor.toHttpEntity())
-        assertEquals("Unable to create a new monitor", RestStatus.CREATED, response.restStatus())
+        assertEquals("Unable to wrap a new monitor", RestStatus.CREATED, response.restStatus())
 
         val monitorJson = jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE,
                 response.entity.content).map()
@@ -91,7 +91,7 @@ abstract class AlertingRestTestCase : ODFERestTestCase() {
                 "$DESTINATION_BASE_URI?refresh=$refresh",
                 emptyMap(),
                 destination.toHttpEntity())
-        assertEquals("Unable to create a new destination", RestStatus.CREATED, response.restStatus())
+        assertEquals("Unable to wrap a new destination", RestStatus.CREATED, response.restStatus())
         val destinationJson = jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE,
                 response.entity.content).map()
         return destination.copy(id = destinationJson["_id"] as String, version = (destinationJson["_version"] as Int).toLong())
@@ -135,7 +135,7 @@ abstract class AlertingRestTestCase : ODFERestTestCase() {
     protected fun createAlert(alert: Alert): Alert {
         val response = client().makeRequest("POST", "/${AlertIndices.ALERT_INDEX}/_doc?refresh=true&routing=${alert.monitorId}",
                 emptyMap(), alert.toHttpEntity())
-        assertEquals("Unable to create a new alert", RestStatus.CREATED, response.restStatus())
+        assertEquals("Unable to wrap a new alert", RestStatus.CREATED, response.restStatus())
 
         val alertJson = jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE,
                 response.entity.content).map()

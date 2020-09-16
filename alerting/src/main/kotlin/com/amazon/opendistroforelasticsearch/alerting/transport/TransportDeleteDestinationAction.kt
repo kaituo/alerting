@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.alerting.transport
 import com.amazon.opendistroforelasticsearch.alerting.action.DeleteDestinationAction
 import com.amazon.opendistroforelasticsearch.alerting.action.DeleteDestinationRequest
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.delete.DeleteResponse
@@ -47,7 +48,7 @@ class TransportDeleteDestinationAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         } finally {

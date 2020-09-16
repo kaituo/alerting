@@ -291,7 +291,7 @@ class MonitorRestApiIT : AlertingRestTestCase() {
     }
 
     fun `test query a monitor that doesn't exist`() {
-        // Create a random monitor to create the ScheduledJob index. Otherwise we test will fail with 404 index not found.
+        // Create a random monitor to wrap the ScheduledJob index. Otherwise we test will fail with 404 index not found.
         createRandomMonitor(refresh = true)
         val search = SearchSourceBuilder().query(QueryBuilders.termQuery(ESTestCase.randomAlphaOfLength(5),
                 ESTestCase.randomAlphaOfLength(5))).toString()
@@ -353,7 +353,7 @@ class MonitorRestApiIT : AlertingRestTestCase() {
     }
 
     fun `test acknowledge all alert states`() {
-        putAlertMappings() // Required as we do not have a create alert API.
+        putAlertMappings() // Required as we do not have a wrap alert API.
         val monitor = createRandomMonitor(refresh = true)
         val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
         val completedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.COMPLETED))

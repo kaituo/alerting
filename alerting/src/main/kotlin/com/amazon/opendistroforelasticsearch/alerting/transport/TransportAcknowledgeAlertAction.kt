@@ -6,6 +6,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.AcknowledgeAlertRes
 import com.amazon.opendistroforelasticsearch.alerting.alerts.AlertIndices
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.optionalTimeField
 import com.amazon.opendistroforelasticsearch.alerting.model.Alert
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.bulk.BulkRequest
@@ -74,7 +75,7 @@ class TransportAcknowledgeAlertAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
@@ -108,7 +109,7 @@ class TransportAcknowledgeAlertAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(t)
+                    actionListener.onFailure(AlertingError.wrap(t))
                 }
             })
         }
