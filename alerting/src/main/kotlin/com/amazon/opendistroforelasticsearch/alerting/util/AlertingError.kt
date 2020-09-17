@@ -22,6 +22,7 @@ import org.elasticsearch.ElasticsearchStatusException
 import org.elasticsearch.common.Strings
 import org.elasticsearch.index.IndexNotFoundException
 import org.elasticsearch.index.engine.VersionConflictEngineException
+import org.elasticsearch.indices.InvalidIndexNameException
 import org.elasticsearch.rest.RestStatus
 
 private val log = LogManager.getLogger(AlertingError::class.java)
@@ -63,6 +64,10 @@ class AlertingError(message: String, val status: RestStatus, ex: Exception) : El
                     status = ex.status()
                     friendlyMsg = ex.message as String
                 }
+                is InvalidIndexNameException -> {
+                    status = RestStatus.BAD_REQUEST
+                    friendlyMsg = ex.message as String
+                }
                 else -> {
                     if (!Strings.isNullOrEmpty(ex.message)) {
                         friendlyMsg = ex.message as String
@@ -72,7 +77,7 @@ class AlertingError(message: String, val status: RestStatus, ex: Exception) : El
             // Wrapping the origin exception as runtime to avoid it being formatted.
             // Currently, alerting-kibana is using error.root_cause.reason to display to user.
             // Below logic is to set friendly message to error.root_cause.reason.
-            return AlertingError(friendlyMsg, status, RuntimeException(ex.message))
+            return AlertingError(friendlyMsg, status, Exception("${ex.javaClass.name}: ${ex.message}"))
         }
     }
 }

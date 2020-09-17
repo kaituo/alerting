@@ -25,6 +25,7 @@ import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings
 import com.amazon.opendistroforelasticsearch.alerting.ALERTING_BASE_URI
 import com.amazon.opendistroforelasticsearch.alerting.randomTrigger
 import com.amazon.opendistroforelasticsearch.alerting.core.model.CronSchedule
+import com.amazon.opendistroforelasticsearch.alerting.core.model.Input
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.core.model.SearchInput
 import com.amazon.opendistroforelasticsearch.alerting.core.settings.ScheduledJobSettings
@@ -140,6 +141,16 @@ class MonitorRestApiIT : AlertingRestTestCase() {
             fail("Expected 405 Method Not Allowed response")
         } catch (e: ResponseException) {
             assertEquals("Unexpected status", RestStatus.METHOD_NOT_ALLOWED, e.response.restStatus())
+        }
+    }
+
+    fun `test creating a monitor with illegal index name`() {
+        try {
+            val si = SearchInput(listOf("_#*IllegalIndexCharacters"), SearchSourceBuilder().query(QueryBuilders.matchAllQuery()))
+            val monitor = randomMonitor()
+            client().makeRequest("POST", ALERTING_BASE_URI, emptyMap(), monitor.copy(inputs = listOf(si)).toHttpEntity())
+        } catch (e: ResponseException) {
+            assertEquals("Unexpected status", RestStatus.BAD_REQUEST, e.response.restStatus())
         }
     }
 
@@ -291,7 +302,7 @@ class MonitorRestApiIT : AlertingRestTestCase() {
     }
 
     fun `test query a monitor that doesn't exist`() {
-        // Create a random monitor to wrap the ScheduledJob index. Otherwise we test will fail with 404 index not found.
+        // Create a random monitor to create the ScheduledJob index. Otherwise we test will fail with 404 index not found.
         createRandomMonitor(refresh = true)
         val search = SearchSourceBuilder().query(QueryBuilders.termQuery(ESTestCase.randomAlphaOfLength(5),
                 ESTestCase.randomAlphaOfLength(5))).toString()
@@ -353,7 +364,7 @@ class MonitorRestApiIT : AlertingRestTestCase() {
     }
 
     fun `test acknowledge all alert states`() {
-        putAlertMappings() // Required as we do not have a wrap alert API.
+        putAlertMappings() // Required as we do not have a create alert API.
         val monitor = createRandomMonitor(refresh = true)
         val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
         val completedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.COMPLETED))

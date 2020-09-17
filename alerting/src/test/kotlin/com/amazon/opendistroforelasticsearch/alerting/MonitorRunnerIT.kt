@@ -124,17 +124,20 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         val monitor = createMonitor(randomMonitor(inputs = listOf(input),
                 triggers = listOf(randomTrigger(condition = NEVER_RUN))))
 
+        deleteIndex("foo")
+
         val response = executeMonitor(monitor.id)
+
         val output = entityAsMap(response)
         assertEquals(monitor.name, output["monitor_name"])
         @Suppress("UNCHECKED_CAST")
         val inputResults = output.stringMap("input_results")
         //sriram: needs to be fixed. error is null  below. ingore for now.
-        //assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
+        assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
 
-        // val alerts = searchAlerts(monitor)
-        // assertEquals("Alert not saved", 1, alerts.size)
-        // verifyAlert(alerts.single(), monitor, ERROR)*/
+        val alerts = searchAlerts(monitor)
+        assertEquals("Alert not saved", 1, alerts.size)
+        verifyAlert(alerts.single(), monitor, ERROR)
     }
 
     fun `test execute monitor wrong monitorid`() {
@@ -344,8 +347,8 @@ class MonitorRunnerIT : AlertingRestTestCase() {
     }
 
     fun `test execute monitor adds to alert error history`() {
-        putAlertMappings() // Required as we do not have a wrap alert API.
-        // This template script has a parsing error to purposefully wrap an errorMessage during runMonitor
+        putAlertMappings() // Required as we do not have a create alert API.
+        // This template script has a parsing error to purposefully create an errorMessage during runMonitor
         val action = randomAction(template = randomTemplateScript("Hello {{ctx.monitor.name"))
         val trigger = randomTrigger(condition = ALWAYS_RUN, actions = listOf(action))
         val monitor = createMonitor(randomMonitor(triggers = listOf(trigger)))
@@ -407,8 +410,8 @@ class MonitorRunnerIT : AlertingRestTestCase() {
     }
 
     fun `test execute monitor limits alert error history to 10 error messages`() {
-        putAlertMappings() // Required as we do not have a wrap alert API.
-        // This template script has a parsing error to purposefully wrap an errorMessage during runMonitor
+        putAlertMappings() // Required as we do not have a create alert API.
+        // This template script has a parsing error to purposefully create an errorMessage during runMonitor
         val action = randomAction(template = randomTemplateScript("Hello {{ctx.monitor.name"))
         val trigger = randomTrigger(condition = ALWAYS_RUN, actions = listOf(action))
         val monitor = createMonitor(randomMonitor(triggers = listOf(trigger)))
@@ -431,7 +434,7 @@ class MonitorRunnerIT : AlertingRestTestCase() {
     }
 
     fun `test execute monitor creates alert for trigger with no actions`() {
-        putAlertMappings() // Required as we do not have a wrap alert API.
+        putAlertMappings() // Required as we do not have a create alert API.
 
         val trigger = randomTrigger(condition = ALWAYS_RUN, actions = emptyList(), destinationId = createDestination().id)
         val monitor = createMonitor(randomMonitor(triggers = listOf(trigger)))
@@ -443,20 +446,23 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         verifyAlert(alerts.single(), monitor, ACTIVE)
     }
 
-    //fixme: this test needs to be modified.
-    fun `test execute monitor with bad search`() {
+    /*
+     * Commented. This test is not relevant anymore. We can't create a monitor with illegal chars.
+     * This is replaced with MonitorRestApiIT.`test creating a monitor with illegal index name`
+     */
+    /*fun `test execute monitor with bad search`() {
         val query = QueryBuilders.matchAllQuery()
         val input = SearchInput(indices = listOf("_#*IllegalIndexCharacters"), query = SearchSourceBuilder().query(query))
+        val monitor = createMonitor(randomMonitor(inputs = listOf(input), triggers = listOf(randomTrigger(condition = ALWAYS_RUN))))
 
-        var exception: ResponseException? = null
-        try {
-            createMonitor(randomMonitor(inputs = listOf(input), triggers = listOf(randomTrigger(condition = ALWAYS_RUN))))
-        } catch (ex: ResponseException) {
-            exception = ex
-        }
-        //assertEquals(400, exception?.response?.statusLine?.statusCode)
-        assertEquals(500, exception?.response?.statusLine?.statusCode)
-    }
+        val response = executeMonitor(monitor.id)
+
+        val output = entityAsMap(response)
+        assertEquals(monitor.name, output["monitor_name"])
+        @Suppress("UNCHECKED_CAST")
+        val inputResults = output.stringMap("input_results")
+        assertTrue("Missing error message from a bad query", (inputResults?.get("error") as String).isNotEmpty())
+    }*/
 
     fun `test execute monitor non-dryrun`() {
         val monitor = createMonitor(
