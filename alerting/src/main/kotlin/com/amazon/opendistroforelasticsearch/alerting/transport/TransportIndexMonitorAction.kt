@@ -89,7 +89,7 @@ class TransportIndexMonitorAction @Inject constructor(
 
     override fun doExecute(task: Task, request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>) {
 
-        if(!isValidIndex(request, actionListener))
+        if (!isValidIndex(request, actionListener))
             return
 
         val ctx = client.threadPool().threadContext.stashContext()
@@ -230,7 +230,8 @@ class TransportIndexMonitorAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
-                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                        actionListener.onFailure(
+                                AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(IndexMonitorResponse(response.id, response.version, response.seqNo,
@@ -282,7 +283,8 @@ class TransportIndexMonitorAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
-                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                        actionListener.onFailure(
+                                AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(
@@ -311,7 +313,7 @@ class TransportIndexMonitorAction @Inject constructor(
     /**
      *  Check if user has permissions to read the configured indices on the monitor.
      */
-    private fun isValidIndex(request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>) : Boolean {
+    private fun isValidIndex(request: IndexMonitorRequest, actionListener: ActionListener<IndexMonitorResponse>): Boolean {
         var ret = true
         val searchInputs = request.monitor.inputs.filter { it.name() == SearchInput.SEARCH_FIELD }
         searchInputs.forEach {

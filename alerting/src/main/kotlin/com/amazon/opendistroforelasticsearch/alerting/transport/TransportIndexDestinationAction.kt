@@ -105,7 +105,8 @@ class TransportIndexDestinationAction @Inject constructor(
                     override fun onResponse(response: IndexResponse) {
                         val failureReasons = checkShardsFailure(response)
                         if (failureReasons != null) {
-                            actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                            actionListener.onFailure(
+                                    AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                             return
                         }
                         actionListener.onResponse(IndexDestinationResponse(response.id, response.version, response.seqNo,
@@ -180,7 +181,8 @@ class TransportIndexDestinationAction @Inject constructor(
                 override fun onResponse(response: IndexResponse) {
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
-                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                        actionListener.onFailure(
+                                AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(IndexDestinationResponse(response.id, response.version, response.seqNo,

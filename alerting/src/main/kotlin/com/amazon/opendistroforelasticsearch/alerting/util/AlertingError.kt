@@ -1,8 +1,21 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.alerting.util
 
-
 import org.apache.logging.log4j.LogManager
-import org.elasticsearch.ElasticsearchException
 import org.elasticsearch.ElasticsearchSecurityException
 import org.elasticsearch.ElasticsearchStatusException
 import org.elasticsearch.common.Strings
@@ -18,40 +31,41 @@ private val log = LogManager.getLogger(AlertingError::class.java)
  */
 class AlertingError(message: String, status: RestStatus, ex: Exception) : ElasticsearchStatusException(message, status, ex) {
 
-
     companion object {
-        //todo: more msgs needs to be added.
         @JvmStatic
         fun wrap(ex: Exception): AlertingError {
             log.error("Alerting error: $ex")
 
             var msg = "Unknown error"
             var status = RestStatus.INTERNAL_SERVER_ERROR
-            if ( ex is IndexNotFoundException) {
-                msg = "Configured monitored indices are not found: [${ex.index} ]"
-                status = ex.status()
-            } else if ( ex is ElasticsearchSecurityException) {
-                msg = "User doesn't have permissions to execute this action. Contact administrator"
-                status = ex.status()
-            } else if ( ex is ElasticsearchStatusException) {
-                msg = ex.message as String
-                status = ex.status()
-            } else if ( ex is IllegalArgumentException) {
-                msg = ex.message as String
-                status = RestStatus.BAD_REQUEST
-            } else if ( ex is VersionConflictEngineException) {
-                msg = ex.message as String
-                status = ex.status()
-            } else {
-                if (!Strings.isNullOrEmpty(ex.message)) {
+            when (ex) {
+                is IndexNotFoundException -> {
+                    status = ex.status()
+                    msg = "Configured monitored indices are not found: [${ex.index} ]"
+                }
+                is ElasticsearchSecurityException -> {
+                    status = ex.status()
+                    msg = "User doesn't have permissions to execute this action. Contact administrator"
+                }
+                is ElasticsearchStatusException -> {
+                    status = ex.status()
                     msg = ex.message as String
+                }
+                is IllegalArgumentException -> {
+                    status = RestStatus.BAD_REQUEST
+                    msg = ex.message as String
+                }
+                is VersionConflictEngineException -> {
+                    status = ex.status()
+                    msg = ex.message as String
+                }
+                else -> {
+                    if (!Strings.isNullOrEmpty(ex.message)) {
+                        msg = ex.message as String
+                    }
                 }
             }
             return AlertingError(msg, status, ex)
         }
     }
-
-
 }
-
-

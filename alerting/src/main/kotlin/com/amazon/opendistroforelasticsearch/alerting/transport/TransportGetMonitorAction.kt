@@ -66,7 +66,8 @@ class TransportGetMonitorAction @Inject constructor(
             client.get(getRequest, object : ActionListener<GetResponse> {
                 override fun onResponse(response: GetResponse) {
                     if (!response.isExists) {
-                        actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND)))
+                        actionListener.onFailure(
+                                AlertingError.wrap(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND)))
                         return
                     }
 
