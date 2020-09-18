@@ -88,7 +88,7 @@ data class Destination(
         out.writeString(name)
         if (user != null) {
             out.writeBoolean(true)
-            user?.writeTo(out)
+            user.writeTo(out)
         } else {
             out.writeBoolean(false)
         }

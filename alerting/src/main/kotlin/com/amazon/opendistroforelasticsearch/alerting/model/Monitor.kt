@@ -145,7 +145,7 @@ data class Monitor(
         out.writeOptionalInstant(enabledTime)
         if (user != null) {
             out.writeBoolean(true)
-            user?.writeTo(out)
+            user.writeTo(out)
         } else {
             out.writeBoolean(false)
         }

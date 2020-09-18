@@ -125,14 +125,12 @@ class MonitorRunnerIT : AlertingRestTestCase() {
                 triggers = listOf(randomTrigger(condition = NEVER_RUN))))
 
         deleteIndex("foo")
-
         val response = executeMonitor(monitor.id)
 
         val output = entityAsMap(response)
         assertEquals(monitor.name, output["monitor_name"])
         @Suppress("UNCHECKED_CAST")
         val inputResults = output.stringMap("input_results")
-        //sriram: needs to be fixed. error is null  below. ingore for now.
         assertTrue("Missing monitor error message", (inputResults?.get("error") as String).isNotEmpty())
 
         val alerts = searchAlerts(monitor)
