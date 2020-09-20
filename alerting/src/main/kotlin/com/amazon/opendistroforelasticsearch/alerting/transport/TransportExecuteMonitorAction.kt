@@ -6,7 +6,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorReque
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,7 +58,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                     } catch (e: Exception) {
                         log.error("Unexpected error running monitor", e)
                         withContext(Dispatchers.IO) {
-                            actionListener.onFailure(AlertingError.wrap(e))
+                            actionListener.onFailure(AlertingException.wrap(e))
                         }
                     }
                 }
@@ -69,7 +69,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                 client.get(getRequest, object : ActionListener<GetResponse> {
                     override fun onResponse(response: GetResponse) {
                         if (!response.isExists) {
-                            actionListener.onFailure(AlertingError.wrap(
+                            actionListener.onFailure(AlertingException.wrap(
                                     ElasticsearchStatusException("Can't find monitor with id: ${response.id}", RestStatus.NOT_FOUND)
                             ))
                             return
@@ -84,7 +84,7 @@ class TransportExecuteMonitorAction @Inject constructor(
                     }
 
                     override fun onFailure(t: Exception) {
-                        actionListener.onFailure(AlertingError.wrap(t))
+                        actionListener.onFailure(AlertingException.wrap(t))
                     }
                 })
             } else {

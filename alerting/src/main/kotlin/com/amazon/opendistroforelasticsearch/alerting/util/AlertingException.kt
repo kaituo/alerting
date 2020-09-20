@@ -25,12 +25,12 @@ import org.elasticsearch.index.engine.VersionConflictEngineException
 import org.elasticsearch.indices.InvalidIndexNameException
 import org.elasticsearch.rest.RestStatus
 
-private val log = LogManager.getLogger(AlertingError::class.java)
+private val log = LogManager.getLogger(AlertingException::class.java)
 
 /**
  * Converts into a user friendly message.
  */
-class AlertingError(message: String, val status: RestStatus, ex: Exception) : ElasticsearchException(message, ex) {
+class AlertingException(message: String, val status: RestStatus, ex: Exception) : ElasticsearchException(message, ex) {
 
     override fun status(): RestStatus {
         return status
@@ -46,7 +46,7 @@ class AlertingError(message: String, val status: RestStatus, ex: Exception) : El
             when (ex) {
                 is IndexNotFoundException -> {
                     status = ex.status()
-                    friendlyMsg = "Configured monitored indices are not found: [${ex.index}]"
+                    friendlyMsg = "Configured indices are not found: ${ex.index}"
                 }
                 is ElasticsearchSecurityException -> {
                     status = ex.status()
@@ -77,7 +77,7 @@ class AlertingError(message: String, val status: RestStatus, ex: Exception) : El
             // Wrapping the origin exception as runtime to avoid it being formatted.
             // Currently, alerting-kibana is using error.root_cause.reason to display to user.
             // Below logic is to set friendly message to error.root_cause.reason.
-            return AlertingError(friendlyMsg, status, Exception("${ex.javaClass.name}: ${ex.message}"))
+            return AlertingException(friendlyMsg, status, Exception("${ex.javaClass.name}: ${ex.message}"))
         }
     }
 }

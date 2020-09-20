@@ -21,30 +21,30 @@ import org.elasticsearch.index.IndexNotFoundException
 import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.test.ESTestCase
 
-class AlertingErrorTests : ESTestCase() {
+class AlertingExceptionTests : ESTestCase() {
 
     fun `test alerterror wrap`() {
         val ex1 = IndexNotFoundException("index_not_found_exception_message")
-        val alterr1 = AlertingError.wrap(ex1)
+        val alterr1 = AlertingException.wrap(ex1)
         assertEquals(ex1.status(), alterr1.status())
         assertTrue(alterr1.message?.startsWith("Configured monitored indices") as Boolean)
 
         val ex2 = ElasticsearchSecurityException("elasticsearch_security_exception_message", RestStatus.FORBIDDEN)
-        val alterr2 = AlertingError.wrap(ex2)
+        val alterr2 = AlertingException.wrap(ex2)
         assertEquals(ex2.status(), alterr2.status())
         assertTrue(alterr2.message?.startsWith("User doesn't have permissions to execute this action") as Boolean)
 
         val ex3 = ElasticsearchStatusException("elasticsearch_exception_message", RestStatus.BAD_GATEWAY)
-        val alterr3 = AlertingError.wrap(ex3)
+        val alterr3 = AlertingException.wrap(ex3)
         assertEquals(ex3.status(), alterr3.status())
         assertTrue(alterr3.message?.startsWith("elasticsearch_exception_message") as Boolean)
 
         val ex4 = IllegalArgumentException("exception_message")
-        val alterr4 = AlertingError.wrap(ex4)
+        val alterr4 = AlertingException.wrap(ex4)
         assertEquals(RestStatus.BAD_REQUEST, alterr4.status())
 
         val ex5 = RuntimeException("exception_message")
-        val alterr5 = AlertingError.wrap(ex5)
+        val alterr5 = AlertingException.wrap(ex5)
         assertEquals(RestStatus.INTERNAL_SERVER_ERROR, alterr5.status())
         assertEquals(ex5.message, alterr5.message)
     }

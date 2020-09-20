@@ -183,7 +183,7 @@ fun Monitor.toJsonString(): String {
 }
 
 fun randomUser(): User {
-    return User("joe", listOf("ops", "backup"), listOf("ops_role, backup_role"), listOf("test_attr=test"))
+    return User("joe", listOf("ops", "backup"), listOf("all_access"), listOf("test_attr=test"))
 }
 
 fun randomUserEmpty(): User {

@@ -20,7 +20,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingException
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.ElasticsearchStatusException
 import org.elasticsearch.action.ActionListener
@@ -67,7 +67,7 @@ class TransportGetMonitorAction @Inject constructor(
                 override fun onResponse(response: GetResponse) {
                     if (!response.isExists) {
                         actionListener.onFailure(
-                                AlertingError.wrap(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND)))
+                                AlertingException.wrap(ElasticsearchStatusException("Monitor not found.", RestStatus.NOT_FOUND)))
                         return
                     }
 
@@ -85,7 +85,7 @@ class TransportGetMonitorAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(AlertingError.wrap(t))
+                    actionListener.onFailure(AlertingException.wrap(t))
                 }
             })
         } finally {

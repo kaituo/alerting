@@ -67,6 +67,7 @@ class MonitorRunnerIT : AlertingRestTestCase() {
     fun `test execute monitor returns search result`() {
         val uniqueName = "unique name"
         val query = QueryBuilders.termQuery("monitor.name.keyword", uniqueName)
+
         val input = SearchInput(indices = listOf(".*"), query = SearchSourceBuilder().query(query))
         val monitor = createMonitor(randomMonitor(name = uniqueName, inputs = listOf(input),
                 triggers = listOf(randomTrigger(condition = ALWAYS_RUN))))
@@ -74,6 +75,7 @@ class MonitorRunnerIT : AlertingRestTestCase() {
         val response = executeMonitor(monitor, params = DRYRUN_MONITOR)
 
         val output = entityAsMap(response)
+
         assertEquals(monitor.name, output["monitor_name"])
         @Suppress("UNCHECKED_CAST")
         val searchResult = (output.objectMap("input_results")["results"] as List<Map<String, Any>>).first()

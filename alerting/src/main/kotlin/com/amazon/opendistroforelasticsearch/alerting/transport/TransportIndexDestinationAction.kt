@@ -6,7 +6,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.IndexDestinationRes
 import com.amazon.opendistroforelasticsearch.alerting.core.ScheduledJobIndices
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings
-import com.amazon.opendistroforelasticsearch.alerting.util.AlertingError
+import com.amazon.opendistroforelasticsearch.alerting.util.AlertingException
 import com.amazon.opendistroforelasticsearch.alerting.util.IndexUtils
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.ElasticsearchStatusException
@@ -71,7 +71,7 @@ class TransportIndexDestinationAction @Inject constructor(
                         onCreateMappingsResponse(response)
                     }
                     override fun onFailure(t: Exception) {
-                        actionListener.onFailure(AlertingError.wrap(t))
+                        actionListener.onFailure(AlertingException.wrap(t))
                     }
                 })
             } else if (!IndexUtils.scheduledJobIndexUpdated) {
@@ -82,7 +82,7 @@ class TransportIndexDestinationAction @Inject constructor(
                                     onUpdateMappingsResponse(response)
                                 }
                                 override fun onFailure(t: Exception) {
-                                    actionListener.onFailure(AlertingError.wrap(t))
+                                    actionListener.onFailure(AlertingException.wrap(t))
                                 }
                             })
             } else {
@@ -106,14 +106,14 @@ class TransportIndexDestinationAction @Inject constructor(
                         val failureReasons = checkShardsFailure(response)
                         if (failureReasons != null) {
                             actionListener.onFailure(
-                                    AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                                    AlertingException.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                             return
                         }
                         actionListener.onResponse(IndexDestinationResponse(response.id, response.version, response.seqNo,
                                 response.primaryTerm, RestStatus.CREATED, destination))
                     }
                     override fun onFailure(t: Exception) {
-                        actionListener.onFailure(AlertingError.wrap(t))
+                        actionListener.onFailure(AlertingException.wrap(t))
                     }
                 })
             }
@@ -125,7 +125,7 @@ class TransportIndexDestinationAction @Inject constructor(
                 IndexUtils.scheduledJobIndexUpdated()
             } else {
                 log.error("Create ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.")
-                actionListener.onFailure(AlertingError.wrap(
+                actionListener.onFailure(AlertingException.wrap(
                     ElasticsearchStatusException(
                             "Create ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged",
                             RestStatus.INTERNAL_SERVER_ERROR
@@ -141,7 +141,7 @@ class TransportIndexDestinationAction @Inject constructor(
                 prepareDestinationIndexing()
             } else {
                 log.error("Update ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.")
-                actionListener.onFailure(AlertingError.wrap(ElasticsearchStatusException(
+                actionListener.onFailure(AlertingException.wrap(ElasticsearchStatusException(
                         "Updated ${ScheduledJob.SCHEDULED_JOBS_INDEX} mappings call not acknowledged.",
                         RestStatus.INTERNAL_SERVER_ERROR
                     ))
@@ -156,14 +156,14 @@ class TransportIndexDestinationAction @Inject constructor(
                     onGetResponse(response)
                 }
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(AlertingError.wrap(t))
+                    actionListener.onFailure(AlertingException.wrap(t))
                 }
             })
         }
 
         private fun onGetResponse(response: GetResponse) {
             if (!response.isExists) {
-                actionListener.onFailure(AlertingError.wrap(
+                actionListener.onFailure(AlertingException.wrap(
                         ElasticsearchStatusException("Destination with ${request.destinationId} is not found", RestStatus.NOT_FOUND)))
                 return
             }
@@ -182,14 +182,14 @@ class TransportIndexDestinationAction @Inject constructor(
                     val failureReasons = checkShardsFailure(response)
                     if (failureReasons != null) {
                         actionListener.onFailure(
-                                AlertingError.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
+                                AlertingException.wrap(ElasticsearchStatusException(failureReasons.toString(), response.status())))
                         return
                     }
                     actionListener.onResponse(IndexDestinationResponse(response.id, response.version, response.seqNo,
                             response.primaryTerm, RestStatus.CREATED, destination))
                 }
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(AlertingError.wrap(t))
+                    actionListener.onFailure(AlertingException.wrap(t))
                 }
             })
         }
