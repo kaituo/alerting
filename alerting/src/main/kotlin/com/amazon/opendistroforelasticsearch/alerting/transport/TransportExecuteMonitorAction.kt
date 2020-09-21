@@ -41,8 +41,7 @@ class TransportExecuteMonitorAction @Inject constructor(
 
     override fun doExecute(task: Task, execMonitorRequest: ExecuteMonitorRequest, actionListener: ActionListener<ExecuteMonitorResponse>) {
 
-        val ctx = client.threadPool().threadContext.stashContext()
-        try {
+        client.threadPool().threadContext.stashContext().use {
             val executeMonitor = fun(monitor: Monitor) {
                 // Launch the coroutine with the clients threadContext. This is needed to preserve authentication information
                 // stored on the threadContext set by the security plugin when using the Alerting plugin with the Security plugin.
@@ -91,8 +90,6 @@ class TransportExecuteMonitorAction @Inject constructor(
                 val monitor = execMonitorRequest.monitor as Monitor
                 executeMonitor(monitor)
             }
-        } finally {
-            ctx.close()
         }
     }
 }

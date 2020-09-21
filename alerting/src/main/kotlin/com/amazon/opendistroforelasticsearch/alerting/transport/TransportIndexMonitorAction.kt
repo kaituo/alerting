@@ -92,11 +92,8 @@ class TransportIndexMonitorAction @Inject constructor(
         if (!isValidIndex(request, actionListener))
             return
 
-        val ctx = client.threadPool().threadContext.stashContext()
-        try {
+        client.threadPool().threadContext.stashContext().use {
             IndexMonitorHandler(client, actionListener, request).start()
-        } finally {
-            ctx.close()
         }
     }
 

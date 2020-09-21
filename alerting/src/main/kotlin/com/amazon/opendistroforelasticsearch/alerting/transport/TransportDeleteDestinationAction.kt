@@ -40,8 +40,7 @@ class TransportDeleteDestinationAction @Inject constructor(
     override fun doExecute(task: Task, request: DeleteDestinationRequest, actionListener: ActionListener<DeleteResponse>) {
         val deleteRequest = DeleteRequest(ScheduledJob.SCHEDULED_JOBS_INDEX, request.destinationId)
                 .setRefreshPolicy(request.refreshPolicy)
-        val ctx = client.threadPool().threadContext.stashContext()
-        try {
+        client.threadPool().threadContext.stashContext().use {
             client.delete(deleteRequest, object : ActionListener<DeleteResponse> {
                 override fun onResponse(response: DeleteResponse) {
                     actionListener.onResponse(response)
@@ -51,8 +50,6 @@ class TransportDeleteDestinationAction @Inject constructor(
                     actionListener.onFailure(AlertingException.wrap(t))
                 }
             })
-        } finally {
-            ctx.close()
         }
     }
 }

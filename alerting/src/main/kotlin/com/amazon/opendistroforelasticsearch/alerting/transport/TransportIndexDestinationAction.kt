@@ -50,11 +50,8 @@ class TransportIndexDestinationAction @Inject constructor(
     }
 
     override fun doExecute(task: Task, request: IndexDestinationRequest, actionListener: ActionListener<IndexDestinationResponse>) {
-        val ctx = client.threadPool().threadContext.stashContext()
-        try {
+        client.threadPool().threadContext.stashContext().use {
             IndexDestinationHandler(client, actionListener, request).start()
-        } finally {
-            ctx.close()
         }
     }
 

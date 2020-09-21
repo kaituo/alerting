@@ -37,8 +37,7 @@ class TransportSearchMonitorAction @Inject constructor(
 
     override fun doExecute(task: Task, searchRequest: SearchRequest, actionListener: ActionListener<SearchResponse>) {
 
-        val ctx = client.threadPool().threadContext.stashContext()
-        try {
+        client.threadPool().threadContext.stashContext().use {
             client.search(searchRequest, object : ActionListener<SearchResponse> {
                 override fun onResponse(response: SearchResponse) {
                     actionListener.onResponse(response)
@@ -48,8 +47,6 @@ class TransportSearchMonitorAction @Inject constructor(
                     actionListener.onFailure(AlertingException.wrap(t))
                 }
             })
-        } finally {
-            ctx.close()
         }
     }
 }
