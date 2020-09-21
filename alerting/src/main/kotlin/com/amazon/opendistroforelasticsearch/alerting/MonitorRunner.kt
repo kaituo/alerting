@@ -185,12 +185,12 @@ class MonitorRunner(
          * (`monitor.user.name`, `monitor.user.roles` are empty )
          * 3. Monitors are created when security plugin is enabled, these will have an User object.
          */
-        var roles = if(monitor.user == null) {
+        var roles = if (monitor.user == null) {
             listOf("all_access")
         } else {
             monitor.user.roles
         }
-        logger.debug("Running monitor: ${monitor.name} with roles: ${roles} Thread: ${Thread.currentThread().name}")
+        logger.debug("Running monitor: ${monitor.name} with roles: $roles Thread: ${Thread.currentThread().name}")
 
         if (periodStart == periodEnd) {
             logger.warn("Start and end time are the same: $periodStart. This monitor will probably only run once.")

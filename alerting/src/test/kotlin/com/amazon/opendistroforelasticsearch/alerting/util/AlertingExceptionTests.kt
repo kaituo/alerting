@@ -27,7 +27,7 @@ class AlertingExceptionTests : ESTestCase() {
         val ex1 = IndexNotFoundException("index_not_found_exception_message")
         val alterr1 = AlertingException.wrap(ex1)
         assertEquals(ex1.status(), alterr1.status())
-        assertTrue(alterr1.message?.startsWith("Configured monitored indices") as Boolean)
+        assertTrue(alterr1.message?.startsWith("Configured indices") as Boolean)
 
         val ex2 = ElasticsearchSecurityException("elasticsearch_security_exception_message", RestStatus.FORBIDDEN)
         val alterr2 = AlertingException.wrap(ex2)

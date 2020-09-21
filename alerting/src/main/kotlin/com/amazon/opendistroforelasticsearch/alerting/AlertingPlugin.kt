@@ -19,6 +19,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.DeleteDestinationAc
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexDestinationAction
 import com.amazon.opendistroforelasticsearch.alerting.action.DeleteMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.ExecuteMonitorAction
+import com.amazon.opendistroforelasticsearch.alerting.action.GetDestinationsAction
 import com.amazon.opendistroforelasticsearch.alerting.action.GetMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.SearchMonitorAction
@@ -37,6 +38,7 @@ import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestAcknowledg
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestDeleteDestinationAction
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestDeleteMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestExecuteMonitorAction
+import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestGetDestinationsAction
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestGetMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestIndexDestinationAction
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestIndexMonitorAction
@@ -51,6 +53,7 @@ import com.amazon.opendistroforelasticsearch.alerting.transport.TransportExecute
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportGetMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportIndexMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportSearchMonitorAction
+import com.amazon.opendistroforelasticsearch.alerting.transport.TransportGetDestinationsAction
 import com.amazon.opendistroforelasticsearch.commons.rest.SecureRestClientBuilder
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionResponse
@@ -130,7 +133,9 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
                 RestAcknowledgeAlertAction(),
                 RestScheduledJobStatsHandler("_alerting"),
                 RestIndexDestinationAction(settings, restClient),
-                RestDeleteDestinationAction())
+                RestDeleteDestinationAction(),
+                RestGetDestinationsAction()
+        )
     }
 
     override fun getActions(): List<ActionPlugin.ActionHandler<out ActionRequest, out ActionResponse>> {
@@ -143,7 +148,8 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
             ActionPlugin.ActionHandler(SearchMonitorAction.INSTANCE, TransportSearchMonitorAction::class.java),
             ActionPlugin.ActionHandler(DeleteMonitorAction.INSTANCE, TransportDeleteMonitorAction::class.java),
             ActionPlugin.ActionHandler(DeleteDestinationAction.INSTANCE, TransportDeleteDestinationAction::class.java),
-            ActionPlugin.ActionHandler(AcknowledgeAlertAction.INSTANCE, TransportAcknowledgeAlertAction::class.java)
+            ActionPlugin.ActionHandler(AcknowledgeAlertAction.INSTANCE, TransportAcknowledgeAlertAction::class.java),
+            ActionPlugin.ActionHandler(GetDestinationsAction.INSTANCE, TransportGetDestinationsAction::class.java)
         )
     }
 
