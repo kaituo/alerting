@@ -177,10 +177,21 @@ class MonitorRunner(
     }
 
     suspend fun runMonitor(monitor: Monitor, periodStart: Instant, periodEnd: Instant, dryrun: Boolean = false): MonitorRunResult {
-        //monitor.user = null : means prev version of monitor
-        //monitor.user.name = null or user.roles.size = 0 : means new version with sec disabled.
-        //monitor.user.name != null : means new version with sec enabled.
-        logger.debug("Running monitor: ${monitor.name} with roles: ${monitor.user?.roles} Thread: ${Thread.currentThread().name}")
+        /*
+         * We need to handle 3 cases:
+         * 1. Monitors created by older versions and never updated. These monitors wont have User details in the
+         * monitor object. `monitor.user` will be null. Insert `all_access` role. todo: add config entry
+         * 2. Monitors are created when security plugin is disabled, these will have empty User object.
+         * (`monitor.user.name`, `monitor.user.roles` are empty )
+         * 3. Monitors are created when security plugin is enabled, these will have an User object.
+         */
+        var roles = if(monitor.user == null) {
+            listOf("all_access")
+        } else {
+            monitor.user.roles
+        }
+        logger.debug("Running monitor: ${monitor.name} with roles: ${roles} Thread: ${Thread.currentThread().name}")
+
         if (periodStart == periodEnd) {
             logger.warn("Start and end time are the same: $periodStart. This monitor will probably only run once.")
         }
@@ -196,7 +207,7 @@ class MonitorRunner(
             logger.error("Error loading alerts for monitor: $id", e)
             return monitorResult.copy(error = e)
         }
-        runBlocking(InjectorContextElement(monitor.id, settings, threadPool.threadContext, monitor.user?.roles)) {
+        runBlocking(InjectorContextElement(monitor.id, settings, threadPool.threadContext, roles)) {
             monitorResult = monitorResult.copy(inputResults = collectInputResults(monitor, periodStart, periodEnd))
         }
         val updatedAlerts = mutableListOf<Alert>()

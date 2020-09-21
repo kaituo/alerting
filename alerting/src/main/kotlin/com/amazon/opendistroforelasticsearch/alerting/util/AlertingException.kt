@@ -75,7 +75,7 @@ class AlertingException(message: String, val status: RestStatus, ex: Exception) 
                 }
             }
             // Wrapping the origin exception as runtime to avoid it being formatted.
-            // Currently, alerting-kibana is using error.root_cause.reason to display to user.
+            // Currently, alerting-kibana is using `error.root_cause.reason` as text in the toast message.
             // Below logic is to set friendly message to error.root_cause.reason.
             return AlertingException(friendlyMsg, status, Exception("${ex.javaClass.name}: ${ex.message}"))
         }
