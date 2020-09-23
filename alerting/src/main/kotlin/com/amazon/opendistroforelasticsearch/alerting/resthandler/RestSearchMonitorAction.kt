@@ -67,6 +67,8 @@ class RestSearchMonitorAction : BaseRestHandler() {
     override fun prepareRequest(request: RestRequest, client: NodeClient): RestChannelConsumer {
         log.debug("${request.method()} ${AlertingPlugin.MONITOR_BASE_URI}/_search")
 
+        val index = request.param("index", SCHEDULED_JOBS_INDEX)
+
         val searchSourceBuilder = SearchSourceBuilder()
         searchSourceBuilder.parseXContent(request.contentOrSourceParamParser())
         searchSourceBuilder.fetchSource(context(request))
@@ -78,7 +80,7 @@ class RestSearchMonitorAction : BaseRestHandler() {
                 .version(true)
         val searchRequest = SearchRequest()
                 .source(searchSourceBuilder)
-                .indices(SCHEDULED_JOBS_INDEX)
+                .indices(index)
         return RestChannelConsumer { channel ->
             client.execute(SearchMonitorAction.INSTANCE, searchRequest, searchMonitorResponse(channel))
         }
