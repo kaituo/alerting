@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.alerting.elasticapi
 
+import com.amazon.opendistroforelasticsearch.alerting.core.model.User
 import com.amazon.opendistroforelasticsearch.commons.InjectSecurity
 import kotlinx.coroutines.delay
 import org.apache.logging.log4j.Logger
@@ -131,6 +132,13 @@ fun XContentBuilder.optionalTimeField(name: String, instant: Instant?): XContent
         return nullField(name)
     }
     return this.timeField(name, name, instant.toEpochMilli())
+}
+
+fun XContentBuilder.optionalUserField(name: String, user: User?): XContentBuilder {
+    if (user == null) {
+        return nullField(name)
+    }
+    return this.field(name, user)
 }
 
 /**

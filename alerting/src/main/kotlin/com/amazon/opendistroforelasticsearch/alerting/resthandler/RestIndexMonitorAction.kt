@@ -19,7 +19,7 @@ import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorRequest
 import com.amazon.opendistroforelasticsearch.alerting.action.IndexMonitorResponse
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
-import com.amazon.opendistroforelasticsearch.alerting.model.User
+import com.amazon.opendistroforelasticsearch.alerting.core.model.User
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_PRIMARY_TERM
 import com.amazon.opendistroforelasticsearch.alerting.util.IF_SEQ_NO
 import com.amazon.opendistroforelasticsearch.alerting.util.REFRESH

@@ -326,7 +326,9 @@ class TransportIndexMonitorAction @Inject constructor(
                 }
 
                 override fun onFailure(t: Exception) {
-                    actionListener.onFailure(AlertingException.wrap(t))
+                    val ex = ElasticsearchStatusException("User doesn't have read permissions for the configured index " +
+                            "${searchInput.indices}", RestStatus.FORBIDDEN)
+                    actionListener.onFailure(AlertingException.wrap(ex))
                     ret = false
                 }
             })
