@@ -31,11 +31,13 @@ class GetDestinationsRequest : ActionRequest {
 
     @Throws(IOException::class)
     constructor(sin: StreamInput) : this(
-        sin.readOptionalString(), // monitorId
-        sin.readLong(), // version
-        FetchSourceContext(sin), // srcContext
-        Table.readFrom(sin), // table
-        sin.readString()
+        destinationId = sin.readOptionalString(),
+        version = sin.readLong(),
+        srcContext = if (sin.readBoolean()) {
+            FetchSourceContext(sin)
+        } else null,
+        table = Table.readFrom(sin),
+        destinationType = sin.readString()
     )
 
     override fun validate(): ActionRequestValidationException? {
@@ -46,7 +48,9 @@ class GetDestinationsRequest : ActionRequest {
     override fun writeTo(out: StreamOutput) {
         out.writeOptionalString(destinationId)
         out.writeLong(version)
+        out.writeBoolean(srcContext != null)
         srcContext?.writeTo(out)
         table.writeTo(out)
+        out.writeString(destinationType)
     }
 }

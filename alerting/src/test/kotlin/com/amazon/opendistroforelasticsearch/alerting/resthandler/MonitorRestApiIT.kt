@@ -31,6 +31,7 @@ import com.amazon.opendistroforelasticsearch.alerting.randomMonitor
 import com.amazon.opendistroforelasticsearch.alerting.randomThrottle
 import com.amazon.opendistroforelasticsearch.alerting.randomTrigger
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings
+import com.google.common.collect.ImmutableMap
 import org.apache.http.HttpHeaders
 import org.apache.http.entity.ContentType
 import org.apache.http.message.BasicHeader
@@ -390,6 +391,121 @@ class MonitorRestApiIT : AlertingRestTestCase() {
         assertTrue("Alert in state ${errorAlert.state} not found in failed list", failedResponseList.contains(completedAlert.id))
         assertTrue("Invalid alert not found in failed list", failedResponseList.contains(invalidAlert.id))
         assertFalse("Alert in state ${activeAlert.state} found in failed list", failedResponseList.contains(activeAlert.id))
+    }
+
+    fun `test get all alerts in all states`() {
+        putAlertMappings() // Required as we do not have a create alert API.
+        val monitor = createRandomMonitor(refresh = true)
+        val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
+        val completedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.COMPLETED))
+        val errorAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ERROR))
+        val activeAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACTIVE))
+        val invalidAlert = randomAlert(monitor).copy(id = "foobar")
+
+        val inputMap = ImmutableMap.builder<String, Any>()
+                .put("missing", "_last")
+                .build()
+        val responseMap = getAlerts(inputMap).asMap()
+        val alerts = responseMap["alerts"].toString()
+
+        assertEquals(4, responseMap["totalAlerts"])
+        assertTrue("Acknowledged alert with id, ${acknowledgedAlert.id}, not found in alert list", alerts.contains(acknowledgedAlert.id))
+        assertTrue("Completed alert with id, ${completedAlert.id}, not found in alert list", alerts.contains(completedAlert.id))
+        assertTrue("Error alert with id, ${errorAlert.id}, not found in alert list", alerts.contains(errorAlert.id))
+        assertTrue("Active alert with id, ${activeAlert.id}, not found in alert list", alerts.contains(activeAlert.id))
+        assertFalse("Invalid alert with id, ${invalidAlert.id}, found in alert list", alerts.contains(invalidAlert.id))
+    }
+
+    fun `test get all alerts with active states`() {
+        putAlertMappings() // Required as we do not have a create alert API.
+        val monitor = createRandomMonitor(refresh = true)
+        val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
+        val completedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.COMPLETED))
+        val errorAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ERROR))
+        val activeAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACTIVE))
+        val invalidAlert = randomAlert(monitor).copy(id = "foobar")
+
+        val inputMap = ImmutableMap.builder<String, Any>()
+                .put("alertState", Alert.State.ACTIVE.name)
+                .build()
+        val responseMap = getAlerts(inputMap).asMap()
+        val alerts = responseMap["alerts"].toString()
+
+        assertEquals(1, responseMap["totalAlerts"])
+        assertFalse("Acknowledged alert with id, ${acknowledgedAlert.id}, found in alert list", alerts.contains(acknowledgedAlert.id))
+        assertFalse("Completed alert with id, ${completedAlert.id}, found in alert list", alerts.contains(completedAlert.id))
+        assertFalse("Error alert with id, ${errorAlert.id}, found in alert list", alerts.contains(errorAlert.id))
+        assertTrue("Active alert with id, ${activeAlert.id}, not found in alert list", alerts.contains(activeAlert.id))
+        assertFalse("Invalid alert with id, ${invalidAlert.id}, found in alert list", alerts.contains(invalidAlert.id))
+    }
+
+    fun `test get all alerts with severity 1`() {
+        putAlertMappings() // Required as we do not have a create alert API.
+        val monitor = createRandomMonitor(refresh = true)
+        val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED, severity = "1"))
+        val completedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.COMPLETED, severity = "3"))
+        val errorAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ERROR, severity = "1"))
+        val activeAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACTIVE, severity = "2"))
+
+        val inputMap = ImmutableMap.builder<String, Any>()
+                .put("severityLevel", "1")
+                .build()
+        val responseMap = getAlerts(inputMap).asMap()
+        val alerts = responseMap["alerts"].toString()
+
+        assertEquals(2, responseMap["totalAlerts"])
+        assertTrue("Acknowledged sev 1 alert with id, ${acknowledgedAlert.id}, not found in alert list",
+                alerts.contains(acknowledgedAlert.id))
+        assertFalse("Completed sev 3 alert with id, ${completedAlert.id}, found in alert list", alerts.contains(completedAlert.id))
+        assertTrue("Error sev 1 alert with id, ${errorAlert.id}, not found in alert list", alerts.contains(errorAlert.id))
+        assertFalse("Active sev 2 alert with id, ${activeAlert.id}, found in alert list", alerts.contains(activeAlert.id))
+    }
+
+    fun `test get all alerts for a specific monitor by id`() {
+        putAlertMappings() // Required as we do not have a create alert API.
+        val monitor = createRandomMonitor(refresh = true)
+        val monitor2 = createRandomMonitor(refresh = true)
+        val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
+        val completedAlert = createAlert(randomAlert(monitor2).copy(state = Alert.State.COMPLETED))
+        val errorAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ERROR))
+        val activeAlert = createAlert(randomAlert(monitor2).copy(state = Alert.State.ACTIVE))
+
+        val inputMap = ImmutableMap.builder<String, Any>()
+                .put("monitorId", monitor.id)
+                .build()
+        val responseMap = getAlerts(inputMap).asMap()
+        val alerts = responseMap["alerts"].toString()
+
+        assertEquals(2, responseMap["totalAlerts"])
+        assertTrue("Acknowledged alert for chosen monitor with id, ${acknowledgedAlert.id}, not found in alert list",
+                alerts.contains(acknowledgedAlert.id))
+        assertFalse("Completed sev 3 alert with id, ${completedAlert.id}, found in alert list", alerts.contains(completedAlert.id))
+        assertTrue("Error alert for chosen monitor with id, ${errorAlert.id}, not found in alert list", alerts.contains(errorAlert.id))
+        assertFalse("Active alert sev 2 with id, ${activeAlert.id}, found in alert list", alerts.contains(activeAlert.id))
+    }
+
+    fun `test get alerts by searching monitor name`() {
+        putAlertMappings() // Required as we do not have a create alert API.
+
+        val monitor = createRandomMonitor(refresh = true)
+        val monitor2 = createRandomMonitor(refresh = true)
+        val acknowledgedAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ACKNOWLEDGED))
+        val completedAlert = createAlert(randomAlert(monitor2).copy(state = Alert.State.COMPLETED))
+        val errorAlert = createAlert(randomAlert(monitor).copy(state = Alert.State.ERROR))
+        val activeAlert = createAlert(randomAlert(monitor2).copy(state = Alert.State.ACTIVE))
+
+        val inputMap = ImmutableMap.builder<String, Any>()
+                .put("searchString", monitor.name)
+                .build()
+        val responseMap = getAlerts(inputMap).asMap()
+        val alerts = responseMap["alerts"].toString()
+
+        assertEquals(2, responseMap["totalAlerts"])
+        assertTrue("Acknowledged alert for matching monitor with id, ${acknowledgedAlert.id}, not found in alert list",
+                alerts.contains(acknowledgedAlert.id))
+        assertFalse("Completed sev 3 alert with id, ${completedAlert.id}, found in alert list", alerts.contains(completedAlert.id))
+        assertTrue("Error alert for matching monitor with id, ${errorAlert.id}, not found in alert list", alerts.contains(errorAlert.id))
+        assertFalse("Active alert sev 2 with id, ${activeAlert.id}, found in alert list", alerts.contains(activeAlert.id))
     }
 
     fun `test mappings after monitor creation`() {
