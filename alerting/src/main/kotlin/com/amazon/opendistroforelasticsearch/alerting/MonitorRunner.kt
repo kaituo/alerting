@@ -190,7 +190,7 @@ class MonitorRunner(
         } else {
             monitor.user.roles
         }
-        logger.debug("Running monitor: ${monitor.name} with roles: $roles Thread: ${Thread.currentThread().name}")
+        logger.info("Running monitor: ${monitor.name} with roles: $roles Thread: ${Thread.currentThread().name}")
 
         if (periodStart == periodEnd) {
             logger.warn("Start and end time are the same: $periodStart. This monitor will probably only run once.")
