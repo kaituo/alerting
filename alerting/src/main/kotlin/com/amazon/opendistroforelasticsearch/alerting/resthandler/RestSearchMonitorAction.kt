@@ -20,11 +20,15 @@ import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob
 import com.amazon.opendistroforelasticsearch.alerting.core.model.ScheduledJob.Companion.SCHEDULED_JOBS_INDEX
 import com.amazon.opendistroforelasticsearch.alerting.model.Monitor
 import com.amazon.opendistroforelasticsearch.alerting.util.context
+import com.amazon.opendistroforelasticsearch.commons.ConfigConstants
+import com.amazon.opendistroforelasticsearch.commons.authuser.AuthUser
 import org.apache.logging.log4j.LogManager
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.node.NodeClient
 import org.elasticsearch.common.bytes.BytesReference
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler
 import org.elasticsearch.common.xcontent.ToXContent.EMPTY_PARAMS
 import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
@@ -49,7 +53,10 @@ private val log = LogManager.getLogger(RestSearchMonitorAction::class.java)
 /**
  * Rest handlers to search for monitors.
  */
-class RestSearchMonitorAction : BaseRestHandler() {
+class RestSearchMonitorAction(
+    val settings: Settings,
+    private val restClient: RestClient
+) : BaseRestHandler() {
 
     override fun getName(): String {
         return "search_monitor_action"
@@ -68,14 +75,23 @@ class RestSearchMonitorAction : BaseRestHandler() {
         log.debug("${request.method()} ${AlertingPlugin.MONITOR_BASE_URI}/_search")
 
         val index = request.param("index", SCHEDULED_JOBS_INDEX)
+        val user = AuthUser(settings, restClient, request.headers[ConfigConstants.AUTHORIZATION]).get()
 
+        // val userRoles = user.roles.remove("own_index")
+
+        val filterBackendRoles = settings.getAsBoolean("opendistro.alerting.filterby.backendroles", false)
         val searchSourceBuilder = SearchSourceBuilder()
         searchSourceBuilder.parseXContent(request.contentOrSourceParamParser())
         searchSourceBuilder.fetchSource(context(request))
         // We add a term query ontop of the customer query to ensure that only scheduled jobs of monitor type are
         // searched.
-        searchSourceBuilder.query(QueryBuilders.boolQuery().must(searchSourceBuilder.query())
-                .filter(QueryBuilders.termQuery(Monitor.MONITOR_TYPE + ".type", Monitor.MONITOR_TYPE)))
+        val queryBuilder = QueryBuilders.boolQuery().must(searchSourceBuilder.query())
+                .filter(QueryBuilders.termQuery(Monitor.MONITOR_TYPE + ".type", Monitor.MONITOR_TYPE))
+
+        if (filterBackendRoles) {
+            queryBuilder.filter(QueryBuilders.termsQuery("monitor.user.backend_roles", user.backendRoles))
+        }
+        searchSourceBuilder.query(queryBuilder)
                 .seqNoAndPrimaryTerm(true)
                 .version(true)
         val searchRequest = SearchRequest()

@@ -54,17 +54,9 @@ private val log = LogManager.getLogger(RestIndexMonitorAction::class.java)
  * Rest handlers to create and update monitors.
  */
 class RestIndexMonitorAction(
-    settings: Settings,
-    restClient: RestClient
-) : BaseRestHandler() {
-
+    val settings: Settings,
     private val restClient: RestClient
-    private val settings: Settings
-
-    init {
-        this.restClient = restClient
-        this.settings = settings
-    }
+) : BaseRestHandler() {
 
     override fun getName(): String {
         return "index_monitor_action"

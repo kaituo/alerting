@@ -53,18 +53,11 @@ private val log = LogManager.getLogger(RestIndexDestinationAction::class.java)
  * Rest handlers to create and update Destination
  */
 class RestIndexDestinationAction(
-    settings: Settings,
-    restClient: RestClient
+    val settings: Settings,
+    private val restClient: RestClient
 ) : BaseRestHandler() {
 
     @Volatile private var indexTimeout = INDEX_TIMEOUT.get(settings)
-    private val restClient: RestClient
-    private val settings: Settings
-
-    init {
-        this.restClient = restClient
-        this.settings = settings
-    }
 
     override fun getName(): String {
         return "index_destination_action"

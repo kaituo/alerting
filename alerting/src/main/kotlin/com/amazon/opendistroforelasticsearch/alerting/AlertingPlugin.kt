@@ -131,7 +131,7 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
         return listOf(RestGetMonitorAction(),
                 RestDeleteMonitorAction(),
                 RestIndexMonitorAction(settings, restClient),
-                RestSearchMonitorAction(),
+                RestSearchMonitorAction(settings, restClient),
                 RestExecuteMonitorAction(),
                 RestAcknowledgeAlertAction(),
                 RestScheduledJobStatsHandler("_alerting"),
@@ -210,7 +210,8 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
                 AlertingSettings.ALERT_HISTORY_RETENTION_PERIOD,
                 AlertingSettings.ALERTING_MAX_MONITORS,
                 AlertingSettings.REQUEST_TIMEOUT,
-                AlertingSettings.MAX_ACTION_THROTTLE_VALUE)
+                AlertingSettings.MAX_ACTION_THROTTLE_VALUE,
+                AlertingSettings.FILTERBY_BACKEND_ROLES)
     }
 
     override fun onIndexModule(indexModule: IndexModule) {
