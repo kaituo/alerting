@@ -81,6 +81,7 @@ import com.amazon.opendistroforelasticsearch.alerting.transport.TransportIndexMo
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportSearchEmailAccountAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportSearchEmailGroupAction
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportSearchMonitorAction
+import com.amazon.opendistroforelasticsearch.commons.rest.SecureRestClientBuilder
 import com.amazon.opendistroforelasticsearch.alerting.transport.TransportGetDestinationsAction
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionResponse
