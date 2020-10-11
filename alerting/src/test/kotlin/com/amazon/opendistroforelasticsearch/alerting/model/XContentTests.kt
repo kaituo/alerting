@@ -16,7 +16,6 @@
 package com.amazon.opendistroforelasticsearch.alerting.model
 
 import com.amazon.opendistroforelasticsearch.alerting.builder
-import com.amazon.opendistroforelasticsearch.alerting.core.model.User
 import com.amazon.opendistroforelasticsearch.alerting.elasticapi.string
 import com.amazon.opendistroforelasticsearch.alerting.model.action.Action
 import com.amazon.opendistroforelasticsearch.alerting.model.action.Throttle
@@ -34,6 +33,7 @@ import com.amazon.opendistroforelasticsearch.alerting.randomTrigger
 import com.amazon.opendistroforelasticsearch.alerting.randomUser
 import com.amazon.opendistroforelasticsearch.alerting.randomUserEmpty
 import com.amazon.opendistroforelasticsearch.alerting.toJsonString
+import com.amazon.opendistroforelasticsearch.commons.authuser.User
 import org.elasticsearch.common.xcontent.ToXContent
 import org.elasticsearch.test.ESTestCase
 import kotlin.test.assertFailsWith
@@ -95,7 +95,7 @@ class XContentTests : ESTestCase() {
 
         val monitorString = monitor.toJsonString()
         val parsedMonitor = Monitor.parse(parser(monitorString))
-        assertEquals("Round tripping Monitor doesn't work", monitor, parsedMonitor)
+        assertEquals("Round tripping Monitor doesn't work", monitor.toString(), parsedMonitor.toString())
     }
 
     fun `test trigger parsing`() {
@@ -113,7 +113,7 @@ class XContentTests : ESTestCase() {
         val alertString = alert.toXContent(builder(), ToXContent.EMPTY_PARAMS).string()
         val parsedAlert = Alert.parse(parser(alertString))
 
-        assertEquals("Round tripping alert doesn't work", alert, parsedAlert)
+        assertEquals("Round tripping alert doesn't work", alert.toString(), parsedAlert.toString())
     }
 
     fun `test alert parsing without user`() {
@@ -149,7 +149,7 @@ class XContentTests : ESTestCase() {
         val user = randomUser()
         val userString = user.toXContent(builder(), ToXContent.EMPTY_PARAMS).string()
         val parsedUser = User.parse(parser(userString))
-        assertEquals("Round tripping user doesn't work", user, parsedUser)
+        assertEquals("Round tripping user doesn't work", user.toString(), parsedUser.toString())
     }
 
     fun `test empty user parsing`() {
@@ -157,7 +157,7 @@ class XContentTests : ESTestCase() {
         val userString = user.toXContent(builder(), ToXContent.EMPTY_PARAMS).string()
 
         val parsedUser = User.parse(parser(userString))
-        assertEquals("Round tripping user doesn't work", user, parsedUser)
+        assertEquals("Round tripping user doesn't work", user.toString(), parsedUser.toString())
         assertEquals("", parsedUser.name)
         assertEquals(0, parsedUser.roles.size)
     }
